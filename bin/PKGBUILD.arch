@@ -1,0 +1,171 @@
+# Courtesy from kharovtobi <https://github.com/kharovtobi>
+# Most of the repository source code  is not my work! it belongs to kjliew at https://github.com/kjliew/qemu-3dfx (pls support him)
+# Do not post this into AUR!
+# The PKGBUILD is dependent on My repository and uses my patch.
+_pkgname=qemu-3dfx
+pkgname="$_pkgname"-arch
+pkgver=9.1.1
+pkgrel=2
+pkgdesc="MESA GL/3Dfx Glide pass-through for QEMU (Forked repository)"
+arch=("x86_64")
+url="https://github.com/kharovtobi/qemu-3dfx-arch"
+license=('GPL-2.0')
+depends=("qemu-base" "seabios")
+makedepends=(
+                                "base"
+                                "base-devel"
+                                "rsync"
+                                "patch"
+                                "ninja"
+                                "git"
+                                "alsa-lib"
+                                "brltty"
+                                "bzip2"
+                                "cairo"
+                                "capstone"
+                                "cdrtools"
+                                "curl"
+                                "dtc"
+                                "dos2unix"
+                                "fuse3"
+                                "gcc-libs"
+                                "gdk-pixbuf2"
+                                "glib2"
+                                "glibc"
+                                "glib2-devel"
+                                "glusterfs"
+                                "gnutls"
+                                "gtk3"
+                                "jack"
+                                "keyutils"
+                                "libaio"
+                                "libbpf"
+                                "libcacard"
+                                "libcap-ng"
+                                "libepoxy"
+                                "libiscsi"
+                                "libnfs"
+                                "libpipewire"
+                                "libpng"
+                                "libpulse"
+                                "libsasl"
+                                "libseccomp"
+                                "libslirp"
+                                "libssh"
+                                "liburing"
+                                "libusb"
+                                "libx11"
+                                "libxdp"
+                                "libxkbcommon"
+                                "libxml2"
+                                "lzo"
+                                "meson"
+                                "multipath-tools"
+                                "mingw-w64-binutils"
+                                "mingw-w64-gcc"
+                                "mingw-w64-tools"
+                                "msitools"
+                                "ncurses"
+                                "ndctl"
+                                "numactl"
+                                "pam"
+                                "pcre2"
+                                "python"
+                                "python-setuptools"
+                                "python-distlib"
+                                "python-sphinx"
+                                "python-sphinx_rtd_theme"
+                                "pixman"
+                                "sdl2"
+                                "sdl2_image"
+                                "snappy"
+                                "spice"
+                                "spice-protocol"
+                                "systemd"
+                                "usbredir"
+                                "vde2"
+                                "virglrenderer"
+                                "vte3"
+                                "xxd"
+                                "zlib"
+                                "zstd"
+# There are other less dependencies depending on what packages you installed.
+)
+provides=("qemu-3dfx" "qemu-3dfx-arch")
+conflicts=("qemu-3dfx")
+# Added optional support as bin instead of installing in AUR as i wanted to be Chrootable
+source=(
+                "git+https://github.com/kharovtobi/qemu-3dfx.git"
+                "https://download.qemu.org/qemu-${pkgver}.tar.xz"
+                "https://github.com/andrewwutw/build-djgpp/releases/download/v3.4/djgpp-linux64-gcc1220.tar.bz2"
+                "https://github.com/open-watcom/open-watcom-v2/releases/download/Current-build/ow-snapshot.tar.xz"
+)
+noextract=("qemu-${pkgver}.tar.xz" "djgpp-linux64-gcc1220.tar.bz2" "ow-snapshot.tar.xz")
+sha256sums=(
+                            'SKIP'
+                            '7dc0f9da5491ff449500f3310063a36b619f236ee45706fd0846eb37d4bba889'
+                            '8464f17017d6ab1b2bb2df4ed82357b5bf692e6e2b7fee37e315638f3d505f00'
+                            'SKIP'
+)
+prepare() {
+    msg Extracting\ src
+    mkdir "$srcdir"/"$_pkgname"/watcom
+    tar xf qemu-${pkgver}.tar.xz -C "$_pkgname"
+    tar xf djgpp-linux64-gcc1220.tar.bz2 -C "$_pkgname"
+    cp  "$srcdir"/"$_pkgname"/djgpp/i586-pc-msdosdjgpp/bin/dxe* "$srcdir"/"$_pkgname"/djgpp/bin
+    tar xf ow-snapshot.tar.xz -C "$_pkgname"/watcom
+    msg Patching\ src
+    cd "$_pkgname"/qemu-${pkgver}
+    rsync -r ../qemu-0/hw/3dfx ../qemu-1/hw/mesa ./hw/
+    patch -p0 -i  ../00-qemu91x-mesa-glide.patch
+    bash ../scripts/sign_commit
+    rm -rf "$srcdir"/"$_pkgname"/build
+    mkdir -p "$srcdir"/"$_pkgname"/build
+}
+build() {
+    msg Configure\ src
+    cd "$srcdir"/"$_pkgname"/build
+    ../qemu-${pkgver}/configure --target-list="i386-softmmu" --prefix=/usr --enable-opengl --enable-gtk --enable-gtk-clipboard --enable-sdl -enable-libusb --disable-xen
+    msg Building\ QEMU-3dfx
+    make clean
+    make qemu-system-i386 man
+    cd "$srcdir"/"$_pkgname"/build/docs
+	cp qemu.1 qemu-3dfx-system-i386.1
+    gzip qemu-3dfx-system-i386.1
+    msg Building\ Wrapper\  Disk
+    export WATCOM="$srcdir"/"$_pkgname"/watcom
+    export PATH=$WATCOM/binl64:$WATCOM/binl:$PATH
+    export EDPATH=$WATCOM/eddat
+    export INCLUDE=$WATCOM/lh
+    export PATH="$srcdir"/"$_pkgname"/djgpp/bin:$PATH
+    cd "$srcdir"/"$_pkgname"/wrappers/3dfx
+    rm -rf build && mkdir build && cd build
+    bash ../../../scripts/conf_wrapper
+    make && make clean
+    cd ../../mesa
+    rm -rf build && mkdir build && cd build
+    bash ../../../scripts/conf_wrapper
+    make && make clean
+    cd "$srcdir"/"$_pkgname"/wrappers/iso
+    mkdir wrapfx && mkdir wrapgl
+    cp -r ../3dfx/build/* ./wrapfx/
+    rm -r ./wrapfx/lib* ./wrapfx/Makefile
+    cp -r ../mesa/build/* ./wrapgl/
+    rm -r ./wrapgl/Makefile
+    echo $(git rev-parse HEAD) > commit\ id.txt
+    cp -r ../texts/readme.txt readme.txt
+	cp -r ../texts/LICENSE license.txt
+	unix2dos readme.txt commit\ id.txt license.txt
+    mkisofs -JR -V 3DFX-WRAPPERS -o ../wrappers.iso ../iso
+}
+package() {
+	install -Dm644 "$srcdir"/"$_pkgname"/LICENSE "$pkgdir"/usr/share/licenses/"$_pkgname"/LICENSE
+	install -Dm644 "$srcdir"/"$_pkgname"/build/docs/qemu-3dfx-system-i386.1.gz "$pkgdir"/usr/share/man/man1/qemu-3dfx.1.gz
+	install -Dm644 "$srcdir"/"$_pkgname"/wrappers/wrappers.iso "$pkgdir"/usr/share/"$_pkgname"/wrappers.iso
+	install -Dm644 "$srcdir"/"$_pkgname"/bin/disks/abd/fd.ima "$pkgdir"/usr/share/"$_pkgname"/fd.ima
+	ln -sf /usr/share/man/man1/qemu-3dfx.1.gz "$pkgdir"/usr/share/man/man1/qemu-3dfx-system-i386.1.gz
+	install -Dm755 "$srcdir"/"$_pkgname"/build/qemu-system-i386 "$pkgdir"/usr/bin/qemu-3dfx-system-i386
+	msg ========================================================================
+	msg Copy\ the\ wrapper\ disk\ at\ /usr/share/qemu-3dfx\ to\ your\ home\ dir!
+	msg ========================================================================
+}

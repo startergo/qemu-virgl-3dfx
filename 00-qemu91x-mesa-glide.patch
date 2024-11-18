@@ -79,7 +79,7 @@ diff -Nru ../orig/qemu-9.1.0/hw/i386/pc.c ./hw/i386/pc.c
 diff -Nru ../orig/qemu-9.1.0/include/hw/i386/pc.h ./include/hw/i386/pc.h
 --- ../orig/qemu-9.1.0/include/hw/i386/pc.h
 +++ ./include/hw/i386/pc.h
-@@ -204,6 +204,22 @@
+@@ -204,6 +204,25 @@
  
  #define TYPE_PORT92 "port92"
  

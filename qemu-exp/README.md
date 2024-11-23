@@ -8,7 +8,6 @@ My planned roadmap i'll never make and if i actually did, its unexpected and may
 ## Content
 The content is inside this folder or already released in this repository.
 - Updating QEMU-3dfx to latest Version
-- Hypervisor support for Windows 8.1 and people not using Hyper-V with [**GVM support**](https://github.com/qemu-gvm/qemu-gvm) (downgraded)
 - Windows binaries
 
 ## Planned Content
@@ -18,6 +17,7 @@ The content is inside this folder or already released in this repository.
 - PKGBUILD for MSYS2
 
 ## Cancelled/Removed Content
+- Hypervisor support for Windows 8.1 and people not using Hyper-V with [**GVM support**](https://github.com/qemu-gvm/qemu-gvm)
 - Compiling wine support for QEMU-3dfx
 
 # Note

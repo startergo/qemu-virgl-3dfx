@@ -16,6 +16,8 @@ The content is inside this folder or already released in this repository.
 - Ubuntu/Debian binaries and .deb packages
 - PKGBUILD for MSYS2
 
+## Deprecated Content
+- `buildiso.sh` Shell Script
 ## Cancelled/Removed Content
 - Hypervisor support for Windows 8.1 and people not using Hyper-V with [**GVM support**](https://github.com/qemu-gvm/qemu-gvm)
 - Compiling wine support for QEMU-3dfx

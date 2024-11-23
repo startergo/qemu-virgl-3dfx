@@ -6,7 +6,6 @@ This folder contains the source codes for wrappers that make pass-through possib
     mesa          - MESA GL wrapper for supported guest OS/environment (Windows)
     iso           - Wrapper Disk folder
     texts         - Some texts and readme
-    buildiso.sh   - Script for making Wrapper Disk
     
 ## Building Guest Wrappers
 **Requirements:**
@@ -65,7 +64,7 @@ This instructions are based in Arch Linux btw, in Bash Shell. Its simple because
 
 **Wine Support**
 
-Since kjliew did not provide source code for Wine binaries that work in QEMU-3dfx. You may donate to him for the Binaries or seek alternatives.
+Since kjliew did not provide source code for Wine binaries that work in QEMU-3dfx. You may donate to him for the Binaries or seek alternatives. (his binaries are better than mine anyway)
 
 1. Compiling WineD3D Libraries. I've tried that and it does not work, especially later versions of wine. ([kjliew to me](https://www.youtube.com/watch?v=FGtzsy8Uptw))
 2. Install Wine9x. May work and or not work, Not tested by me.
@@ -74,8 +73,6 @@ Since kjliew did not provide source code for Wine binaries that work in QEMU-3df
 
 ## Notes
  - Feel free to add anything to iso folder.
- - Run `buildiso.sh` to make a Wrapper Disk with tools installed via the internet automatically. If you have kjliew's `vmaddons.iso`, It will extract files into the iso to add WineD3D libraries. (Everything must be compiled first and followed the Building Guest Wrappers instructions!)
- - The buildiso.sh also works on kjliew's or any forked qemu-3dfx repository. Copy the script to the repo's wrapper folder and don't forget to update as i may change stuff (Required!)
  - ICD support is included via JHRobotics forked repo but disabled by default (im sorry)
  - Making mesa wrappers only compile opengl32.dll and wgltest.exe only. If you want all of them to compile including ICD support, run command in `wrappers/mesa/build` with Makefile
         

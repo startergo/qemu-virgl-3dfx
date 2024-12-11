@@ -1,5 +1,5 @@
 # QEMU MESA GL/3Dfx Glide Pass-Through Wrapper Disk
-This folder contains the source codes for wrappers that make pass-through possible and how to make one
+This folder contains the source codes for wrappers that make pass-through possible and how to make one.
 
 ## Content
     3dfx          - Glide wrappers for supported guest OS/environment (DOS/Windows/DJGPP/Linux)

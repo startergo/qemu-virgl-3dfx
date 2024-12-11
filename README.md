@@ -27,15 +27,8 @@ Witness, experience and share your thoughts on modern CPU/GPU prowess for retro 
 ## Downloading QEMU
 (https://github.com/kharovtobi/qemu-3dfx/releases)
 
-This includes Binaries and PKGBUILD
+This includes Windows Binaries and old PKGBUILD files
 
-`qemu-3dfx-arch-*-pkg.tar.zst` for binary packages for Arch Linux (DEPRECATED!)
-
-`bin-linux` for Linux (DEPRECATED!)
-
-`bin-windows` for Windows
-
-- Since i got a new computer and i can't boot into bios, I can't no longer support Arch Linux until i find a way.
 ## Building QEMU
 There are two ways to build this repo. While this is repo is used for Arch Linux, It can also build on other OS like Windows 10 with MSYS2 too. MINGW64 is recommended as compiling with UCRT64 may have segmentation fault when using `-boot` command
 
@@ -74,13 +67,14 @@ Simple guide to apply the patch:<br>
     $ ../qemu-9.1.1/configure --target-list="i386-softmmu"
     $ make
 
+- You can also patch any versions in 9.1.x
 - All patch hunks must be successful in order for the binary to run properly or you may have BSOD when running Windows 98 for the first time and not work as intended.
 
 **VirGL with SDL2 OpenGL Support**
 
 This way adds VirGL patches for the binary (Windows and MacOS)(Work in Progress)
 
-- If you compile the binary using patch VirGL package, You will have this [error](https://www.google.com/search?q=mingw+w64+runtime+failure+32+bit+pseudo+relocation+at&sca_esv=0c814c2424608e41&ei=bkpBZ-eCGZvT2roPnbPakQo&oq=Mingw-w64+runtime+failure%3A+32+bit+pseudo+relocation&gs_lp=Egxnd3Mtd2l6LXNlcnAiM01pbmd3LXc2NCBydW50aW1lIGZhaWx1cmU6IDMyIGJpdCBwc2V1ZG8gcmVsb2NhdGlvbioCCAAyBxAAGLADGB4yDhAAGIAEGLADGIYDGIoFMg4QABiABBiwAxiGAxiKBTIOEAAYgAQYsAMYhgMYigUyDhAAGIAEGLADGIYDGIoFSLcHUABYAHABeACQAQCYAQCgAQCqAQC4AQHIAQCYAgGgAgKYAwCIBgGQBgWSBwExoAcA&sclient=gws-wiz-serp). Its best to leave it alone while i find a way or tinker it yourself
+- If you compile the binary using patch VirGL package, You will have this [error](https://www.google.com/search?q=mingw+w64+runtime+failure+32+bit+pseudo+relocation+at&sca_esv=0c814c2424608e41&ei=bkpBZ-eCGZvT2roPnbPakQo&oq=Mingw-w64+runtime+failure%3A+32+bit+pseudo+relocation&gs_lp=Egxnd3Mtd2l6LXNlcnAiM01pbmd3LXc2NCBydW50aW1lIGZhaWx1cmU6IDMyIGJpdCBwc2V1ZG8gcmVsb2NhdGlvbioCCAAyBxAAGLADGB4yDhAAGIAEGLADGIYDGIoFMg4QABiABBiwAxiGAxiKBTIOEAAYgAQYsAMYhgMYigUyDhAAGIAEGLADGIYDGIoFSLcHUABYAHABeACQAQCYAQCgAQCqAQC4AQHIAQCYAgGgAgKYAwCIBgGQBgWSBwExoAcA&sclient=gws-wiz-serp).
 
 ## Building Guest Wrappers
 Refer to https://github.com/kharovtobi/qemu-3dfx-arch/blob/master/wrappers/README.md for more info 

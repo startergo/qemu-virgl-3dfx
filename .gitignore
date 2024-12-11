@@ -1,0 +1,42 @@
+# Ignore dependencies and stuff idk
+pkg/
+src/
+djgpp/
+watcom/
+bin/src/
+bin/pkg/
+bin/qemu-3dfx
+bin/qemu-3dfx-arch
+build/
+wrappers/3dfx/build
+wrappers/mesa/build
+qemu-3dfx/
+qemu-3dfx-arch/
+*iso
+*qcw
+*qcow
+
+# Ignore versions of qemu src
+qemu-9*
+qemu-8*
+qemu-7*
+qemu-6*
+
+# ISO folders
+wrappers/iso/commit\ id.txt
+wrappers/iso/readme.txt
+wrappers/license.txt
+wrappers/wrapgl
+wrappers/wrapfx
+wrappers/drivers
+wrappers/win32
+wrappers/win64
+wrappers.iso
+
+# Zip folders
+*tar
+*tar.bz2
+*tar.xz
+*tar.zst
+*zip
+*7z

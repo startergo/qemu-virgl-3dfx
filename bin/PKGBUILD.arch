@@ -110,7 +110,7 @@ sha256sums=(
 )
 prepare() {
     msg Extracting\ src
-    rm -r "$srcdir"/"$_pkgname"/watcom
+    rm -rf "$srcdir"/"$_pkgname"/watcom
     mkdir "$srcdir"/"$_pkgname"/watcom
     tar xf qemu-${pkgver}.tar.xz -C "$_pkgname"
     tar xf djgpp-linux64-gcc1220.tar.bz2 -C "$_pkgname"

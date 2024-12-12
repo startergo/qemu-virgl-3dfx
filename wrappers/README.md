@@ -35,12 +35,12 @@ If you have Watcom installed, run command first
 **Requirements**
 - `git` for stamping commit ID to text
 - `mkisofs` for making iso
-- `dos2unix` for changing control characters to Windows CRLF
+- `dos2unix` for changing control characters to Windows CRLF (important)
 - `bsdtar, vmaddons.iso` for copying DirectX wrappers (optional)
 
 **Packaging**
 
-This instructions are based in Arch Linux btw, in Bash Shell. Its simple because of different Linux distributions or your using Windows
+This instructions are based in Arch Linux btw, in Bash Shell. Its simple because of different Linux distributions or your using Windows.
 
     $ cd ~/myqemu/qemu-3dfx/wrappers/iso
     $ mkdir wrapfx && cd wrapfx
@@ -61,15 +61,18 @@ This instructions are based in Arch Linux btw, in Bash Shell. Its simple because
     
 - Feel free to add anything to iso
 - mkisofs is not available on MSYS2. You may have to use [WinCDEmu](https://wincdemu.sysprogs.org/download/)
+- dos2unix is recommended as texts encoded in LF while on Windows (until 1809) have text errors.
 
 **Wine Support**
 
 Since kjliew did not provide source code for Wine binaries that work in QEMU-3dfx. You may donate to him for the Binaries or seek alternatives. (his binaries are better than mine anyway)
 
 1. Compiling WineD3D Libraries. I've tried that and it does not work, especially later versions of wine. ([kjliew to me](https://www.youtube.com/watch?v=FGtzsy8Uptw))
-2. Install Wine9x. May work and or not work, Not tested by me.
+2. Install Wine9x. May work or not work, Not tested by me.
 3. [Donate to him.](https://github.com/kjliew/qemu-3dfx?tab=readme-ov-file#donation)
 4. c̶h̶e̶c̶k̶ ̶a̶r̶c̶h̶i̶v̶e̶.̶o̶r̶g̶.
+5. Try compiling ReactOS Wine (might work. [Reference](https://github.com/adolfintel/wined3d4win/issues/13))
+
 
 ## Notes
  - Feel free to add anything to iso folder.

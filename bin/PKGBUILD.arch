@@ -94,7 +94,7 @@ makedepends=(
 optdepends=("qemu-docs: for documentation and learning invocation")
 provides=("qemu-3dfx" "qemu-3dfx-arch")
 conflicts=("qemu-3dfx")
-# Added optional wrapper support as bin instead of installing in AUR as i wanted to be Chrootable
+# Added optional wrapper support as bin instead of installing in AUR as i wanted to be Chrootable (or djgpp-djcrx have link error)
 source=(
                 "git+https://github.com/kharovtobi/qemu-3dfx.git"
                 "https://download.qemu.org/qemu-${pkgver}.tar.xz"
@@ -119,7 +119,7 @@ prepare() {
     msg Patching\ src
     cd "$_pkgname"/qemu-${pkgver}
     rsync -r ../qemu-0/hw/3dfx ../qemu-1/hw/mesa ./hw/
-    patch -p0 -i  ../00-qemu91x-mesa-glide.patch
+    patch -p0 -i  ../01-qemu91x-mesa-glide.patch
     bash ../scripts/sign_commit
     rm -rf "$srcdir"/"$_pkgname"/build
     mkdir -p "$srcdir"/"$_pkgname"/build
@@ -131,7 +131,7 @@ build() {
     msg Building\ QEMU-3dfx
     make clean
     make qemu-system-i386 qemu-system-x86_64
-    msg Building\ Wrapper\  Disk
+    msg Building\ Wrapper\ Disk
     export WATCOM="$srcdir"/"$_pkgname"/watcom
     export PATH=$WATCOM/binl64:$WATCOM/binl:$PATH
     export EDPATH=$WATCOM/eddat

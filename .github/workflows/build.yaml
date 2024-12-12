@@ -11,8 +11,8 @@ jobs:
    
      runs-on: windows-2019       
      env:
-      pkgver: '9.1.1'
-      patch:  '00-qemu91x-mesa-glide.patch'
+      pkgver: '9.1.2'
+      patch:  '01-qemu91x-mesa-glide.patch'
       mspkg: 'mingw-w64-x86_64'
       
      steps:  
@@ -111,7 +111,7 @@ jobs:
        shell: msys2 {0}
        run: |
         echo "Configuring build"
-        ../qemu-${{ env.pkgver }}/configure --disable-werror --target-list=i386-softmmu --prefix=/usr --enable-opengl --enable-whpx --enable-gtk --enable-gtk-clipboard --enable-sdl --enable-sdl-image --enable-libusb
+        ../qemu-${{ env.pkgver }}/configure --target-list=i386-softmmu --prefix=/usr 
 
      - name: Compile build
        working-directory: ./build
@@ -137,7 +137,7 @@ jobs:
    Wrappers:
             runs-on: ubuntu-latest
             env:
-             pkgver: '9.1.1'
+             pkgver: '9.1.2'
             steps:
               - name: Checkout repo
                 uses: actions/checkout@v4

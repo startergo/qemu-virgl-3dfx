@@ -15,6 +15,7 @@ The content is inside this folder or already released in this repository.
 - How to compile other wrappers and tools for Addons Disk (Advanced Wrapper Disk)
 - Ubuntu/Debian binaries and .deb packages
 - PKGBUILD for MSYS2
+- Build Automation
 
 ## Deprecated Content
 - `buildiso.sh` Shell Script

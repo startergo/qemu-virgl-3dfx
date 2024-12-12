@@ -14,10 +14,18 @@ For more info. Refer to the [original repo](https://github.com/kjliew/qemu-3dfx)
     bin/PKGBUILD         - Script for building the packages
     bin/disks            - Floppy Disks to make installation better
 ## Patches
-    00-qemu91x-mesa-glide.patch - Patch for QEMU version 9.1.x (MESA & Glide)
+This repository includes patches from upstream and my patches that work on latest version.
+
+**My patches**
+
+    01-qemu91x-mesa-glide.patch - Patch for QEMU version 9.1.x (MESA & Glide)
+
+**Kjliew's patches**
+
     00-qemu82x-mesa-glide.patch - Patch for QEMU version 8.2.x (MESA & Glide)
     01-qemu72x-mesa-glide.patch - Patch for QEMU version 7.2.x (MESA & Glide)
     02-qemu620-mesa-glide.patch - Patch for QEMU version 6.2.0 (MESA & Glide)
+
 ## QEMU Windows Guests Glide/OpenGL/Direct3D Acceleration
 Witness, experience and share your thoughts on modern CPU/GPU prowess for retro Windows games on Apple Silicon macOS, Windows 10/11 and modern Linux. Most games can be installed and played in pristine condition without the hassle of hunting down unofficial, fan-made patches to play them on Windows 10/later or modern Linux/Wine. And now it's updated for rolling release and added some tools and libraries i copied on the internet to make the experience better (as long i have free time).
 - Original repository ( https://github.com/kjliew/qemu-3dfx)
@@ -52,7 +60,7 @@ This way is simple. Just download the PKGBUILD from GitHub. (Arch-Based distribu
 This way is basically the same, But less tedious and compiles only the essentials, making it much faster. (Any operating systems)
 
 Simple guide to apply the patch:<br>
-(using `00-qemu91x-mesa-glide.patch`)
+(using `01-qemu91x-mesa-glide.patch`)
 
     $ mkdir ~/myqemu && cd ~/myqemu
     $ git clone https://github.com/kharovtobi/qemu-3dfx.git
@@ -61,7 +69,7 @@ Simple guide to apply the patch:<br>
     $ tar xf qemu-9.1.1.tar.xz
     $ cd qemu-9.1.1
     $ rsync -r ../qemu-0/hw/3dfx ../qemu-1/hw/mesa ./hw/
-    $ patch -p0 -i ../00-qemu91x-mesa-glide.patch
+    $ patch -p0 -i ../01-qemu91x-mesa-glide.patch
     $ bash ../scripts/sign_commit
     $ mkdir ../build && cd ../build
     $ ../qemu-9.1.1/configure --target-list="i386-softmmu"
@@ -77,7 +85,7 @@ This way adds VirGL patches for the binary (Windows and MacOS)(Work in Progress)
 - If you compile the binary using patch VirGL package, You will have this [error](https://www.google.com/search?q=mingw+w64+runtime+failure+32+bit+pseudo+relocation+at&sca_esv=0c814c2424608e41&ei=bkpBZ-eCGZvT2roPnbPakQo&oq=Mingw-w64+runtime+failure%3A+32+bit+pseudo+relocation&gs_lp=Egxnd3Mtd2l6LXNlcnAiM01pbmd3LXc2NCBydW50aW1lIGZhaWx1cmU6IDMyIGJpdCBwc2V1ZG8gcmVsb2NhdGlvbioCCAAyBxAAGLADGB4yDhAAGIAEGLADGIYDGIoFMg4QABiABBiwAxiGAxiKBTIOEAAYgAQYsAMYhgMYigUyDhAAGIAEGLADGIYDGIoFSLcHUABYAHABeACQAQCYAQCgAQCqAQC4AQHIAQCYAgGgAgKYAwCIBgGQBgWSBwExoAcA&sclient=gws-wiz-serp).
 
 ## Building Guest Wrappers
-Refer to https://github.com/kharovtobi/qemu-3dfx-arch/blob/master/wrappers/README.md for more info 
+Refer to https://github.com/kharovtobi/qemu-3dfx-arch/blob/master/wrappers/README.md for more info.
 
 ## Installing Guest Wrappers
 **For Win9x/ME:**  
@@ -93,5 +101,5 @@ Refer to https://github.com/kharovtobi/qemu-3dfx-arch/blob/master/wrappers/READM
  - Copy `OPENGL32.DLL` to `Game Installation` folders
 
 ## Credits
-- kjliew - For making QEMU-3dfx 
-- JHRobotics - For making ICD support 
+- KJ Liew - For making QEMU-3dfx 
+- JHRobotics - For making ICD support

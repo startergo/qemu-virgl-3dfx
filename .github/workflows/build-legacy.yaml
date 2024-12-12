@@ -12,7 +12,7 @@ jobs:
      runs-on: windows-2019       
      env:
       pkgver: '9.1.1'
-      patch:  '00-qemu91x-mesa-glide.patch'
+      patch:  '01-qemu91x-mesa-glide.patch'
       mspkg: 'mingw-w64-x86_64'
       
      steps:  

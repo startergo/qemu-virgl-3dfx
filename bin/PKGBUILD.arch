@@ -154,7 +154,7 @@ build() {
     echo $(git rev-parse HEAD) > commit\ id.txt
     cp -r ../texts/readme.txt readme.txt
     cp -r ../texts/LICENSE license.txt
-    unix2dos readme.txt commit\ id.txt license.txt
+    unix2dos commit\ id.txt license.txt readme.txt autorun.inf open.bat
     mkisofs -JR -V 3DFX-WRAPPERS -o ../wrappers.iso ../iso
 }
 package() {

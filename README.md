@@ -1,7 +1,7 @@
 # QEMU MESA GL/3Dfx Glide Pass-Through (for Arch based distros)
-This is a fork of QEMU-3dfx for Arch Linux or any OS with pacman command
+This is a fork of QEMU-3dfx for Arch Linux or any OS with pacman command.
 
-For more info. Refer to the [original repo](https://github.com/kjliew/qemu-3dfx)
+For more info. Refer to the [original repo](https://github.com/kjliew/qemu-3dfx).
 ## Content
     qemu-0/hw/3dfx       - Overlay for QEMU source tree to add 3Dfx Glide pass-through device model
     qemu-1/hw/mesa       - Overlay for QEMU source tree to add MESA GL pass-through device model
@@ -10,7 +10,6 @@ For more info. Refer to the [original repo](https://github.com/kjliew/qemu-3dfx)
     virgl3d              - VirGL with SDL2 OpenGL patches
     wrappers/3dfx        - Glide wrappers for supported guest OS/environment (DOS/Windows/DJGPP/Linux)
     wrappers/mesa        - MESA GL wrapper for supported guest OS/environment (Windows)
-    wrappers/buildiso.sh - Script for making Wrapper Disk
     bin/PKGBUILD         - Script for building the packages
     bin/disks            - Floppy Disks to make installation better
 ## Patches
@@ -20,7 +19,7 @@ This repository includes patches from upstream and my patches that work on lates
 
     01-qemu91x-mesa-glide.patch - Patch for QEMU version 9.1.x (MESA & Glide)
 
-**Kjliew's patches**
+**KJ Liew's patches**
 
     00-qemu82x-mesa-glide.patch - Patch for QEMU version 8.2.x (MESA & Glide)
     01-qemu72x-mesa-glide.patch - Patch for QEMU version 7.2.x (MESA & Glide)
@@ -82,7 +81,7 @@ Simple guide to apply the patch:<br>
 
 This way adds VirGL patches for the binary (Windows and MacOS)(Work in Progress)
 
-- If you compile the binary using patch VirGL package, You will have this [error](https://www.google.com/search?q=mingw+w64+runtime+failure+32+bit+pseudo+relocation+at&sca_esv=0c814c2424608e41&ei=bkpBZ-eCGZvT2roPnbPakQo&oq=Mingw-w64+runtime+failure%3A+32+bit+pseudo+relocation&gs_lp=Egxnd3Mtd2l6LXNlcnAiM01pbmd3LXc2NCBydW50aW1lIGZhaWx1cmU6IDMyIGJpdCBwc2V1ZG8gcmVsb2NhdGlvbioCCAAyBxAAGLADGB4yDhAAGIAEGLADGIYDGIoFMg4QABiABBiwAxiGAxiKBTIOEAAYgAQYsAMYhgMYigUyDhAAGIAEGLADGIYDGIoFSLcHUABYAHABeACQAQCYAQCgAQCqAQC4AQHIAQCYAgGgAgKYAwCIBgGQBgWSBwExoAcA&sclient=gws-wiz-serp).
+- If you compile the binary using patched VirGL package, You will have this [error].(https://www.google.com/search?q=mingw+w64+runtime+failure+32+bit+pseudo+relocation+at&sca_esv=0c814c2424608e41&ei=bkpBZ-eCGZvT2roPnbPakQo&oq=Mingw-w64+runtime+failure%3A+32+bit+pseudo+relocation&gs_lp=Egxnd3Mtd2l6LXNlcnAiM01pbmd3LXc2NCBydW50aW1lIGZhaWx1cmU6IDMyIGJpdCBwc2V1ZG8gcmVsb2NhdGlvbioCCAAyBxAAGLADGB4yDhAAGIAEGLADGIYDGIoFMg4QABiABBiwAxiGAxiKBTIOEAAYgAQYsAMYhgMYigUyDhAAGIAEGLADGIYDGIoFSLcHUABYAHABeACQAQCYAQCgAQCqAQC4AQHIAQCYAgGgAgKYAwCIBgGQBgWSBwExoAcA&sclient=gws-wiz-serp).
 
 ## Building Guest Wrappers
 Refer to https://github.com/kharovtobi/qemu-3dfx-arch/blob/master/wrappers/README.md for more info.

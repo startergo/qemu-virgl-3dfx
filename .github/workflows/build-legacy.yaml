@@ -217,7 +217,7 @@ jobs:
                  rm -r ./wrapgl/Makefile
                  echo $(git rev-parse HEAD) > commit\ id.txt
                  cp -r ../texts/readme_dx.txt readme.txt
-                 cp -r ../texts/LICENSE license.txt
+                 cp -r ../../LICENSE license.txt
                  unix2dos readme.txt commit\ id.txt license.txt
                  mkisofs -JR -V 3DFX-WRAPPERS -o ../wrappers.iso ../iso
                  echo "Finished build at $(date)"

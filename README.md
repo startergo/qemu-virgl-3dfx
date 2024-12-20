@@ -80,10 +80,10 @@ Simple guide to apply the patch:<br>
 
 **VirGL with SDL2 OpenGL Support**
 
-This way adds VirGL patches for the binary (Windows and MacOS)(Work in Progress)
+This way adds VirGL patches for the binary (Windows and MacOS)(work in progress)
 
-- UCRT is required
-- If you compile the binary using patched VirGL package, You will have this [error](https://www.google.com/search?q=mingw+w64+runtime+failure+32+bit+pseudo+relocation+at&sca_esv=0c814c2424608e41&ei=bkpBZ-eCGZvT2roPnbPakQo&oq=Mingw-w64+runtime+failure%3A+32+bit+pseudo+relocation&gs_lp=Egxnd3Mtd2l6LXNlcnAiM01pbmd3LXc2NCBydW50aW1lIGZhaWx1cmU6IDMyIGJpdCBwc2V1ZG8gcmVsb2NhdGlvbioCCAAyBxAAGLADGB4yDhAAGIAEGLADGIYDGIoFMg4QABiABBiwAxiGAxiKBTIOEAAYgAQYsAMYhgMYigUyDhAAGIAEGLADGIYDGIoFSLcHUABYAHABeACQAQCYAQCgAQCqAQC4AQHIAQCYAgGgAgKYAwCIBgGQBgWSBwExoAcA&sclient=gws-wiz-serp).
+- Recommended for 8.2.x only!
+- If you compile the binary using patched VirGL package without patching it first will have an error. ([reference](https://github.com/msys2/MINGW-packages/issues/10547))
 
 ## Building Guest Wrappers
 Refer to https://github.com/kharovtobi/qemu-3dfx-arch/blob/master/wrappers/README.md for more info.

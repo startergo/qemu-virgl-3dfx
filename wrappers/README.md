@@ -67,11 +67,12 @@ This instructions are based in Arch Linux btw, in Bash Shell. Its simple because
 
 Since kjliew did not provide source code for Wine binaries that work in QEMU-3dfx. You may donate to him for the Binaries or seek alternatives. (his binaries are better than mine anyway)
 
-1. Install [SoftGPU](https://github.com/JHRobotics/softgpu)
-2. [Donate to him.](https://github.com/kjliew/qemu-3dfx?tab=readme-ov-file#donation)
-3. c̶h̶e̶c̶k̶ ̶a̶r̶c̶h̶i̶v̶e̶.̶o̶r̶g̶.
-4. Compiling WineD3D Libraries. I've tried that and it does not work, especially later versions of wine. ([kjliew to me](https://www.youtube.com/watch?v=FGtzsy8Uptw))
-5. Try compiling ReactOS Wine (might work. [Reference](https://github.com/adolfintel/wined3d4win/issues/13))
+1. Install [SoftGPU](https://github.com/JHRobotics/softgpu) (Works like a charm)
+2. Compile [Wine9x Libraries](https://github.com/JHRobotics/wine9x) (Works if followed instructions correctly, but runs terrible)
+3. Compile WineD3D Libraries directly on wine. I've tried that and it does not work, especially later versions of wine. ([kjliew to me](https://www.youtube.com/watch?v=FGtzsy8Uptw))
+4. Try compiling ReactOS Wine (might work. [Reference](https://github.com/adolfintel/wined3d4win/issues/13))
+5. [Donate to him](https://github.com/kjliew/qemu-3dfx?tab=readme-ov-file#donation).
+6. c̶h̶e̶c̶k̶ ̶a̶r̶c̶h̶i̶v̶e̶.̶o̶r̶g̶.
 
 
 ## Notes

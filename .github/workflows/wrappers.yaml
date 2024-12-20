@@ -5,13 +5,17 @@
 name: Build Wrappers
 
 on:
-  [pull_request]
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
   
 jobs:
    Wrappers:
             runs-on: ubuntu-latest
             env:
-             pkgver: '9.1.2'
+             pkgver: '9.2.0'
             steps:
               - name: Checkout repo
                 uses: actions/checkout@v4

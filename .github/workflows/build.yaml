@@ -11,8 +11,8 @@ jobs:
    
      runs-on: windows-2019       
      env:
-      pkgver: '9.1.2'
-      patch:  '01-qemu91x-mesa-glide.patch'
+      pkgver: '9.2.0'
+      patch:  '00-qemu92x-mesa-glide.patch'
       mspkg: 'mingw-w64-x86_64'
       
      steps:  
@@ -212,15 +212,18 @@ jobs:
                 run: |
                  echo "Making Wrapper Disk"
                  mkdir wrapfx
-                 mkdir wrapgl
+                 mkdir -p wrapgl/icd
                  cp -r ../3dfx/build/* ./wrapfx/
                  rm -r ./wrapfx/lib* ./wrapfx/Makefile
                  cp -r ../mesa/build/* ./wrapgl/
                  rm -r ./wrapgl/Makefile
                  echo $(git rev-parse HEAD) > commit\ id.txt
-                 cp -r ../texts/readme_dx.txt readme.txt
-                 cp -r ../../LICENSE license.txt
-                 unix2dos readme.txt commit\ id.txt license.txt
+                 cp ../texts/readme_dx.txt readme.txt
+                 cp ../../LICENSE license.txt
+                 cp ../texts/icd-enable.reg wrapgl/icd-enable.reg
+                 cp ../texts/readme.icd.txt wrapgl/readme.txt
+                 mv wrapgl/qmfxgl32.dll wrapgl/icd/qmfxgl32.dll
+                 unix2dos autorun.inf open.bat readme.txt commit\ id.txt license.txt
                  mkisofs -JR -V 3DFX-WRAPPERS -o ../wrappers.iso ../iso
                  echo "Finished build at $(date)"
 

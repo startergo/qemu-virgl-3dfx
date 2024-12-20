@@ -1,5 +1,5 @@
 # QEMU MESA GL/3Dfx Glide Pass-Through (for Arch based distros)
-This is a fork of QEMU-3dfx for Arch Linux or any OS with pacman command.
+This is a fork of QEMU-3dfx for Arch Linux or any OS with pacman command and tries to add more documentation for more clarification.
 
 For more info. Refer to the [original repo](https://github.com/kjliew/qemu-3dfx).
 ## Content
@@ -17,6 +17,7 @@ This repository includes patches from upstream and my patches that work on lates
 
 **My patches**
 
+    00-qemu92x-mesa-glide.patch - Patch for QEMU version 9.2.x (MESA & Glide)
     01-qemu91x-mesa-glide.patch - Patch for QEMU version 9.1.x (MESA & Glide)
 
 **KJ Liew's patches**
@@ -81,6 +82,7 @@ Simple guide to apply the patch:<br>
 
 This way adds VirGL patches for the binary (Windows and MacOS)(Work in Progress)
 
+- UCRT is required
 - If you compile the binary using patched VirGL package, You will have this [error](https://www.google.com/search?q=mingw+w64+runtime+failure+32+bit+pseudo+relocation+at&sca_esv=0c814c2424608e41&ei=bkpBZ-eCGZvT2roPnbPakQo&oq=Mingw-w64+runtime+failure%3A+32+bit+pseudo+relocation&gs_lp=Egxnd3Mtd2l6LXNlcnAiM01pbmd3LXc2NCBydW50aW1lIGZhaWx1cmU6IDMyIGJpdCBwc2V1ZG8gcmVsb2NhdGlvbioCCAAyBxAAGLADGB4yDhAAGIAEGLADGIYDGIoFMg4QABiABBiwAxiGAxiKBTIOEAAYgAQYsAMYhgMYigUyDhAAGIAEGLADGIYDGIoFSLcHUABYAHABeACQAQCYAQCgAQCqAQC4AQHIAQCYAgGgAgKYAwCIBgGQBgWSBwExoAcA&sclient=gws-wiz-serp).
 
 ## Building Guest Wrappers

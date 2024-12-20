@@ -40,3 +40,7 @@ wrappers.iso
 *tar.zst
 *zip
 *7z
+
+# Gamepad not yet ready
+gamepad.patch
+qemu-2

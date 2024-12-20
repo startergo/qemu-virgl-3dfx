@@ -278,7 +278,7 @@ diff -Nru ../orig/qemu-9.1.0/target/i386/whpx/whpx-all.c ./target/i386/whpx/whpx
                             MemoryRegionSection *section)
  {
 diff -Nru ../orig/qemu-9.1.0/ui/console.c ./ui/console.c
---- ../orig/qemu-8.2.1/ui/console.c
+--- ../orig/qemu-9.1.0/ui/console.c
 +++ ./ui/console.c
 @@ -125,6 +125,11 @@
      }

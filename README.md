@@ -81,7 +81,7 @@ Simple guide to apply the patch:<br>
 
 This way adds VirGL patches for the binary (Windows and MacOS)(Work in Progress)
 
-- If you compile the binary using patched VirGL package, You will have this [error].(https://www.google.com/search?q=mingw+w64+runtime+failure+32+bit+pseudo+relocation+at&sca_esv=0c814c2424608e41&ei=bkpBZ-eCGZvT2roPnbPakQo&oq=Mingw-w64+runtime+failure%3A+32+bit+pseudo+relocation&gs_lp=Egxnd3Mtd2l6LXNlcnAiM01pbmd3LXc2NCBydW50aW1lIGZhaWx1cmU6IDMyIGJpdCBwc2V1ZG8gcmVsb2NhdGlvbioCCAAyBxAAGLADGB4yDhAAGIAEGLADGIYDGIoFMg4QABiABBiwAxiGAxiKBTIOEAAYgAQYsAMYhgMYigUyDhAAGIAEGLADGIYDGIoFSLcHUABYAHABeACQAQCYAQCgAQCqAQC4AQHIAQCYAgGgAgKYAwCIBgGQBgWSBwExoAcA&sclient=gws-wiz-serp).
+- If you compile the binary using patched VirGL package, You will have this [error](https://www.google.com/search?q=mingw+w64+runtime+failure+32+bit+pseudo+relocation+at&sca_esv=0c814c2424608e41&ei=bkpBZ-eCGZvT2roPnbPakQo&oq=Mingw-w64+runtime+failure%3A+32+bit+pseudo+relocation&gs_lp=Egxnd3Mtd2l6LXNlcnAiM01pbmd3LXc2NCBydW50aW1lIGZhaWx1cmU6IDMyIGJpdCBwc2V1ZG8gcmVsb2NhdGlvbioCCAAyBxAAGLADGB4yDhAAGIAEGLADGIYDGIoFMg4QABiABBiwAxiGAxiKBTIOEAAYgAQYsAMYhgMYigUyDhAAGIAEGLADGIYDGIoFSLcHUABYAHABeACQAQCYAQCgAQCqAQC4AQHIAQCYAgGgAgKYAwCIBgGQBgWSBwExoAcA&sclient=gws-wiz-serp).
 
 ## Building Guest Wrappers
 Refer to https://github.com/kharovtobi/qemu-3dfx-arch/blob/master/wrappers/README.md for more info.

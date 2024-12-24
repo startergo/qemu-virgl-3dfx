@@ -61,6 +61,7 @@ jobs:
           ${{ env.mspkg }}-libpng
           ${{ env.mspkg }}-libslirp
           ${{ env.mspkg }}-libssh
+          ${{ env.mspkg }}-libssh2
           ${{ env.mspkg }}-libtasn1
           ${{ env.mspkg }}-libusb
           ${{ env.mspkg }}-libxml2
@@ -221,7 +222,7 @@ jobs:
                  cp ../texts/readme_dx.txt readme.txt
                  cp ../../LICENSE license.txt
                  cp ../texts/icd-enable.reg wrapgl/icd-enable.reg
-                 cp ../texts/readme.icd.txt wrapgl/readme.txt
+                 cp ../texts/readme_icd.txt wrapgl/readme.txt
                  mv wrapgl/qmfxgl32.dll wrapgl/icd/qmfxgl32.dll
                  unix2dos autorun.inf open.bat readme.txt commit\ id.txt license.txt
                  mkisofs -JR -V 3DFX-WRAPPERS -o ../wrappers.iso ../iso

@@ -22,7 +22,7 @@ qemu-8*
 qemu-7*
 qemu-6*
 
-# ISO folders
+# Wrappers & ISO folders 
 wrappers/iso/commit\ id.txt
 wrappers/iso/readme.txt
 wrappers/license.txt
@@ -41,6 +41,7 @@ wrappers.iso
 *zip
 *7z
 
-# Gamepad not yet ready
+# Stuff not yet ready
 gamepad.patch
 qemu-2
+wrappers/wine/

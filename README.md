@@ -1,5 +1,5 @@
 # QEMU MESA GL/3Dfx Glide Pass-Through (for Arch based distros)
-This is a fork of QEMU-3dfx for Arch Linux or any OS with pacman command and tries to add more documentation for more clarification.
+This is a fork of QEMU-3dfx for Arch Linux or any OS with pacman command and tries to add more documentation.
 
 For more info. Refer to the [original repo](https://github.com/kjliew/qemu-3dfx).
 ## Content
@@ -57,30 +57,30 @@ This way is simple. Just download the PKGBUILD from GitHub. (Arch-Based distribu
 
 **Traditional Way**
 
-This way is basically the same, But less tedious and compiles only the essentials, making it much faster. (Any operating systems)
+This way is basically the same, But less tedious and compiles only the essentials and installs to a folder making it much faster. (Any operating systems)
 
 Simple guide to apply the patch:<br>
-(using `01-qemu91x-mesa-glide.patch`)
+(using `00-qemu92x-mesa-glide.patch`)
 
     $ mkdir ~/myqemu && cd ~/myqemu
     $ git clone https://github.com/kharovtobi/qemu-3dfx.git
     $ cd qemu-3dfx
-    $ wget https://download.qemu.org/qemu-9.1.1.tar.xz
-    $ tar xf qemu-9.1.1.tar.xz
-    $ cd qemu-9.1.1
+    $ wget https://download.qemu.org/qemu-9.2.0.tar.xz
+    $ tar xf qemu-9.2.0.tar.xz
+    $ cd qemu-9.2.0
     $ rsync -r ../qemu-0/hw/3dfx ../qemu-1/hw/mesa ./hw/
-    $ patch -p0 -i ../01-qemu91x-mesa-glide.patch
+    $ patch -p0 -i ../00-qemu92x-mesa-glide.patch
     $ bash ../scripts/sign_commit
     $ mkdir ../build && cd ../build
-    $ ../qemu-9.1.1/configure --target-list="i386-softmmu"
-    $ make
+    $ ../qemu-9.2.0/configure --target-list=i386-softmmu --prefix=$(pwd)/install_dir
+    $ make install 
 
-- You can also patch any versions in 9.1.x
+- You can also patch any versions in 9.2.x
 - All patch hunks must be successful in order for the binary to run properly or you may have BSOD when running Windows 98 for the first time and not work as intended.
 
 **VirGL with SDL2 OpenGL Support**
 
-This way adds VirGL patches for the binary (Windows and MacOS)(work in progress)
+This way adds VirGL patches for the binary (Windows and MacOS)
 
 - Recommended for 8.2.x only!
 - If you compile the binary using patched VirGL package without patching it first will have an error. ([reference](https://github.com/msys2/MINGW-packages/issues/10547))

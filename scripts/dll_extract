@@ -134,7 +134,6 @@ for filedef in "${filesdef[@]}"; do
         cp "$MINGW_PREFIX/bin/$filedef" ./
     else
         echo "Error: $filedef is missing!" >&2
-        exit 1
     fi
 done
 echo "Done!"

@@ -75,6 +75,7 @@ Simple guide to apply the patch:<br>
     $ ../qemu-9.2.0/configure --target-list=i386-softmmu --prefix=$(pwd)/install_dir
     $ make install 
 
+- This guide makes and installs binaries to install_dir
 - You can also patch any versions in 9.2.x
 - All patch hunks must be successful in order for the binary to run properly or you may have BSOD when running Windows 98 for the first time and not work as intended.
 

@@ -31,12 +31,17 @@ If you have Watcom installed, run command first
     $ bash ../../../scripts/conf_wrapper
     $ make && make clean
 
+## Building Extras
+kjliew also created [qemu-xtra](https://github.com/kjliew/qemu-xtra) for extra addons that are not essential for QEMU-3dfx. One of them is QEMU-3dfx OpenGlide src.
+
+refer to https://github.com/kharovtobi/qemu-xtra/blob/master/README.md for more info about compiling them
+
 ## Packaging Guest Wrappers
 **Requirements**
 - `git` for stamping commit ID to text
-- `mkisofs` for making iso
+- `mkisofs` or `xorriso` for making iso
 - `dos2unix` for changing control characters to Windows CRLF (important)
-- `bsdtar, vmaddons.iso` for copying DirectX wrappers (optional)
+- `bsdtar, vmaddons.iso` for copying DirectX wrappers and extras (optional)
 
 **Packaging**
 
@@ -60,7 +65,8 @@ This instructions are based in Arch Linux btw, in Bash Shell. Its simple because
     $ mkisofs -o wrappers.iso ./iso
     
 - Feel free to add anything to iso
-- mkisofs is not available on MSYS2. You may have to use [WinCDEmu](https://wincdemu.sysprogs.org/download/)
+- mkisofs is not available on MSYS2. You may have to use xorriso or use [WinCDEmu](https://wincdemu.sysprogs.org/download/) 
+- xorriso equivalent is `xorriso -as mkisofs -o wrappers.iso ./iso`
 - dos2unix is recommended as texts encoded in LF while on Windows (until 1809) have text errors.
 
 **Wine Support**
@@ -77,7 +83,7 @@ Since kjliew did not provide source code for Wine binaries that work in QEMU-3df
 
 ## Notes
  - If you got some problems with the wrappers (i.e wrappers compiled without 3dfx patches). you should download it on actions tab via "Build Wrappers" and choose the latest build. (you need a github account)
- - Using NVIDIA driver on Linux may crash QEMU-3dfx when running a game. try using nouveau (or not)
+ - Using NVIDIA driver on Linux may crash QEMU-3dfx when running a OpenGL application. using nouveau can solve it but it still crashes when running DirectX apps instead.
  - ICD support is included via JHRobotics forked repo but disabled by default (im sorry)
  - Making mesa wrappers only compile opengl32.dll and wgltest.exe only. If you want all of them to compile including ICD support, run command in `wrappers/mesa/build` with Makefile
         

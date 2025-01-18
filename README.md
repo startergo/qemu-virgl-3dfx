@@ -3,15 +3,16 @@ This is a fork of QEMU-3dfx for Arch Linux or any OS with pacman command and tri
 
 For more info. Refer to the [original repo](https://github.com/kjliew/qemu-3dfx).
 ## Content
+    bin/disks            - Floppy Disks to make installation better
     qemu-0/hw/3dfx       - Overlay for QEMU source tree to add 3Dfx Glide pass-through device model
     qemu-1/hw/mesa       - Overlay for QEMU source tree to add MESA GL pass-through device model
     qemu-exp             - Experimental Folders
+    packages             - Script for building the packages (Arch Linux)
     scripts/sign_commit  - Script for stamping commit id
     virgl3d              - VirGL with SDL2 OpenGL patches
     wrappers/3dfx        - Glide wrappers for supported guest OS/environment (DOS/Windows/DJGPP/Linux)
     wrappers/mesa        - MESA GL wrapper for supported guest OS/environment (Windows)
-    bin/PKGBUILD         - Script for building the packages
-    bin/disks            - Floppy Disks to make installation better
+
 ## Patches
 This repository includes patches from upstream and my patches that work on latest version.
 
@@ -46,12 +47,10 @@ This way is simple. Just download the PKGBUILD from GitHub. (Arch-Based distribu
 
     $ mkdir ~/myqemu && cd ~/myqemu
     $ git clone https://github.com/kharovtobi/qemu-3dfx.git
-    $ cd qemu-3dfx/bin
+    $ cd qemu-3dfx/packages/qemu-3dfx
     $ makepkg -si
 
 - This scripts builds it for you to install into your system.
-- Default PKGBUILD compiles kjliew's repository!
-- If you want to use my repository, rename `PKGBUILD.arch` to `PKGBUILD`.
 - Chroot is recommended! for more details, Go to https://wiki.archlinux.org/title/DeveloperWiki:Building_in_a_clean_chroot
 
 
@@ -105,3 +104,4 @@ Refer to https://github.com/kharovtobi/qemu-3dfx-arch/blob/master/wrappers/READM
 ## Credits
 - KJ Liew - For making QEMU-3dfx 
 - JHRobotics - For making ICD support
+- cyanea-bt - Script reference

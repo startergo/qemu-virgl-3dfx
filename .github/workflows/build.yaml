@@ -4,10 +4,12 @@
 name: Build Stable branch
 
 on:
-  workflow_dispatch:
+  - push
+  - pull_request
+  - workflow_dispatch
   
 jobs:
-   Windows:
+   MINGW64-Windows:
    
      runs-on: windows-2019       
      env:
@@ -35,22 +37,32 @@ jobs:
           python 
           rsync
           wget
+          zstd
           ${{ env.mspkg }}-python
           ${{ env.mspkg }}-python-distlib
           ${{ env.mspkg }}-python-setuptools
           ${{ env.mspkg }}-python-sphinx
           ${{ env.mspkg }}-python-sphinx_rtd_theme
+          ${{ env.mspkg }}-angleproject
           ${{ env.mspkg }}-autotools
           ${{ env.mspkg }}-toolchain
+          ${{ env.mspkg }}-7zip
           ${{ env.mspkg }}-cairo
           ${{ env.mspkg }}-capstone
           ${{ env.mspkg }}-curl
+          ${{ env.mspkg }}-cyrus-sasl
           ${{ env.mspkg }}-dtc
+          ${{ env.mspkg }}-expat
+          ${{ env.mspkg }}-fontconfig
           ${{ env.mspkg }}-freetype
           ${{ env.mspkg }}-gcc
           ${{ env.mspkg }}-gdk-pixbuf2
+          ${{ env.mspkg }}-gettext-runtime
+          ${{ env.mspkg }}-gettext-tools
           ${{ env.mspkg }}-glib2
           ${{ env.mspkg }}-gnutls
+          ${{ env.mspkg }}-gst-libav
+          ${{ env.mspkg }}-gst-plugins-ugly
           ${{ env.mspkg }}-gtk3
           ${{ env.mspkg }}-gtk-vnc
           ${{ env.mspkg }}-jack2
@@ -65,17 +77,20 @@ jobs:
           ${{ env.mspkg }}-libtasn1
           ${{ env.mspkg }}-libusb
           ${{ env.mspkg }}-libxml2
+          ${{ env.mspkg }}-lz4
           ${{ env.mspkg }}-lzo2
           ${{ env.mspkg }}-meson
           ${{ env.mspkg }}-msitools
           ${{ env.mspkg }}-ncurses
           ${{ env.mspkg }}-nettle
           ${{ env.mspkg }}-ninja
-          ${{ env.mspkg }}-pixman
           ${{ env.mspkg }}-pcre2
+          ${{ env.mspkg }}-pixman
           ${{ env.mspkg }}-pkgconf
+          ${{ env.mspkg }}-pulseaudio
           ${{ env.mspkg }}-SDL2
           ${{ env.mspkg }}-SDL2_image
+          ${{ env.mspkg }}-SDL2_sound
           ${{ env.mspkg }}-snappy
           ${{ env.mspkg }}-spice
           ${{ env.mspkg }}-spice-gtk
@@ -112,7 +127,7 @@ jobs:
        shell: msys2 {0}
        run: |
         echo "Configuring build"
-        ../qemu-${{ env.pkgver }}/configure --target-list=i386-softmmu --prefix=/usr 
+        ../qemu-${{ env.pkgver }}/configure --target-list="x86_64-softmmu,i386-softmmu" --prefix=$(pwd)/../install_dir
 
      - name: Compile build
        working-directory: ./build
@@ -126,110 +141,269 @@ jobs:
        shell: msys2 {0}
        run: |
         echo "Installing build to output"
-        make DESTDIR=./output install
+        make install
+        bash ../scripts/sign_binary
+        cat <<EOF > version.txt
+        QEMU-3dfx-arch (Windows Build)
+        =================================================
+        Github Actions Artifact Build
+        Version $(git describe --tags)
+        Built using ${MSYSTEM} 
+        EOF
         echo "Finished build at $(date)"
 
      - name: Uploading build
        uses: actions/upload-artifact@v4
        with:
-        name: bin-windows-${{ env.pkgver }}-artifact
-        path: ./build/output/a/_temp/msys64/usr
+        name: bin-windows-mingw64-${{ env.pkgver }}-artifact
+        path: ./install_dir
 
+   UCRT64-Windows:
+
+    runs-on: windows-2019
+    env:
+     pkgver: '9.2.0'
+     patch:  '00-qemu92x-mesa-glide.patch'
+     mspkg: 'mingw-w64-ucrt-x86_64'
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
+    - name: Setup MSYS2
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: UCRT64
+        update: true
+        install: >-
+          base
+          base-devvel
+          dos2unix
+          git
+          make
+          ninja
+          patch
+          python
+          rsync
+          wget
+          zstd
+          ${{ env.mspkg }}-python
+          ${{ env.mspkg }}-python-distlib
+          ${{ env.mspkg }}-python-setuptools
+          ${{ env.mspkg }}-python-sphinx
+          ${{ env.mspkg }}-python-sphinx_rtd_theme
+          ${{ env.mspkg }}-angleproject
+          ${{ env.mspkg }}-autotools
+          ${{ env.mspkg }}-toolchain
+          ${{ env.mspkg }}-7zip
+          ${{ env.mspkg }}-cairo
+          ${{ env.mspkg }}-capstone
+          ${{ env.mspkg }}-curl
+          ${{ env.mspkg }}-cyrus-sasl
+          ${{ env.mspkg }}-dtc
+          ${{ env.mspkg }}-expat
+          ${{ env.mspkg }}-fontconfig
+          ${{ env.mspkg }}-freetype
+          ${{ env.mspkg }}-gcc
+          ${{ env.mspkg }}-gdk-pixbuf2
+          ${{ env.mspkg }}-gettext-runtime
+          ${{ env.mspkg }}-gettext-tools
+          ${{ env.mspkg }}-glib2
+          ${{ env.mspkg }}-gnutls
+          ${{ env.mspkg }}-gst-libav
+          ${{ env.mspkg }}-gst-plugins-ugly
+          ${{ env.mspkg }}-gtk3
+          ${{ env.mspkg }}-gtk-vnc
+          ${{ env.mspkg }}-jack2
+          ${{ env.mspkg }}-libcacard
+          ${{ env.mspkg }}-libgcrypt
+          ${{ env.mspkg }}-libepoxy
+          ${{ env.mspkg }}-libnfs
+          ${{ env.mspkg }}-libpng
+          ${{ env.mspkg }}-libslirp
+          ${{ env.mspkg }}-libssh
+          ${{ env.mspkg }}-libssh2
+          ${{ env.mspkg }}-libtasn1
+          ${{ env.mspkg }}-libusb
+          ${{ env.mspkg }}-libxml2
+          ${{ env.mspkg }}-lz4
+          ${{ env.mspkg }}-lzo2
+          ${{ env.mspkg }}-meson
+          ${{ env.mspkg }}-msitools
+          ${{ env.mspkg }}-ncurses
+          ${{ env.mspkg }}-nettle
+          ${{ env.mspkg }}-ninja
+          ${{ env.mspkg }}-pcre2
+          ${{ env.mspkg }}-pixman
+          ${{ env.mspkg }}-pkgconf
+          ${{ env.mspkg }}-pulseaudio
+          ${{ env.mspkg }}-SDL2
+          ${{ env.mspkg }}-SDL2_image
+          ${{ env.mspkg }}-SDL2_sound
+          ${{ env.mspkg }}-snappy
+          ${{ env.mspkg }}-spice
+          ${{ env.mspkg }}-spice-gtk
+          ${{ env.mspkg }}-spice-protocol
+          ${{ env.mspkg }}-usbredir
+          ${{ env.mspkg }}-virglrenderer
+          ${{ env.mspkg }}-xz
+          ${{ env.mspkg }}-zlib
+          ${{ env.mspkg }}-zstd
+
+    - name: Extracting build
+      continue-on-error: true
+      shell: msys2 {0}
+      run:  |
+        echo "Downloading src"
+        wget -q https://download.qemu.org/qemu-${{ env.pkgver }}.tar.xz
+        echo "Extracting src"
+        tar xf qemu-${{ env.pkgver }}.tar.xz 
+        echo "Don't mind the error, It's a windows feature"
+
+    - name: Patching build
+      shell: msys2 {0}
+      run:  |
+        echo "Adding files to src"
+        rsync -rv qemu-0/hw/3dfx qemu-1/hw/mesa qemu-${{ env.pkgver }}/hw/
+        cd qemu-${{ env.pkgver }}
+        echo "Patching files to src"
+        patch -p0 -i ../${{ env.patch }}
+        echo "Signing commit id to src"
+        bash ../scripts/sign_commit
+
+    - name: Configure build
+      working-directory: ./build
+      shell: msys2 {0}
+      run: |
+        echo "Configuring build"
+        ../qemu-${{ env.pkgver }}/configure --target-list="x86_64-softmmu,i386-softmmu" --prefix=$(pwd)/../install_dir
+
+    - name: Compile build
+      working-directory: ./build
+      shell: msys2 {0}
+      run: |
+        echo "Compiling Build"
+        make -j$(nproc)
+
+    - name: Installing build
+      working-directory: ./build
+      shell: msys2 {0}
+      run: |
+        echo "Installing build to output"
+        make install
+        bash ../scripts/sign_binary
+        cat <<EOF > version.txt
+        QEMU-3dfx-arch (Windows Build)
+        =================================================
+        Github Actions Artifact Build
+        Version $(git describe --tags)
+        Built using ${MSYSTEM} 
+        EOF
+        echo "Finished build at $(date)"
+
+    - name: Uploading build
+      uses: actions/upload-artifact@v4
+      with:
+        name: bin-windows-ucrt64-${{ env.pkgver }}-artifact
+        path: ./install_dir
+
+
+        
    Wrappers:
-            runs-on: ubuntu-latest
-            env:
-             pkgver: '9.1.2'
-            steps:
-              - name: Checkout repo
-                uses: actions/checkout@v4
-                
-              - name: Install dependencies
-                uses: ConorMacBride/install-package@v1
-                with:
-                  apt: >
-                    meson
-                    binutils-mips-linux-gnu
-                    ninja-build
-                    bsdmainutils
-                    build-essential
-                    libaudiofile-dev
-                    binutils-mingw-w64-i686
-                    libdigest-sha-perl
-                    mingw-w64-tools
-                    libsdl2-dev
-                    libusb-1.0-0-dev
-                    libfl2
-                    libfl-dev
-                    g++-mingw-w64-i686
-                    g++-10-multilib
-                    gcc-10-multilib
-                    gcc-mingw-w64-i686-win32-runtime
-                    g++-mingw-w64-i686-win32
-                    gcc-mingw-w64-i686
-                    mingw-w64-i686-dev
-                    mingw-w64-common
-                    libx11-dev
-                    libcapstone-dev
-                    dos2unix
-                    pkgconf
-                    python3
-                    git
-                    genisoimage
+   
+    runs-on: windows-2019       
+    env:
+     pkgver: '9.2.0'
+     mspkg: 'mingw-w64-i686'
+     
+    steps:  
+    - name: Checkout repo
+      uses: actions/checkout@v4
+      
+    - name: Setup MSYS2
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW32
+        update: true
+        install: >-
+         base-devel
+         dos2unix
+         git
+         unzip
+         vim
+         xorriso
+         mingw-w64-i686-autotools
+         mingw-w64-i686-binutils
+         mingw-w64-i686-gcc
+         mingw-w64-i686-tools
 
-              - name: Adding optional support
-                run:  |
-                 echo "Downloading watcom"
-                 wget -q https://github.com/open-watcom/open-watcom-v2/releases/download/Current-build/ow-snapshot.tar.xz
-                 echo "Downloading djgpp"
-                 wget -q https://github.com/andrewwutw/build-djgpp/releases/download/v3.4/djgpp-linux64-gcc1220.tar.bz2
-                 mkdir watcom
-                 echo "Extracting watcom"
-                 tar xf ow-snapshot.tar.xz -C watcom
-                 echo "Extracting djgpp"
-                 tar xf djgpp-linux64-gcc1220.tar.bz2
-                 cp -v djgpp/i586-pc-msdosdjgpp/bin/dxe* djgpp/bin
+    - name: Adding optional support
+      run:  |
+       echo "initialize submodules"
+       git submodule update --init --recursive
+       echo "Downloading watcom"
+       wget -q https://github.com/open-watcom/open-watcom-v2/releases/download/2025-01-03-Build/ow-snapshot.tar.xz
+       echo "Downloading djgpp"
+       wget -q https://github.com/andrewwutw/build-djgpp/releases/download/v3.4/djgpp-mingw-gcc1220.zip
+       mkdir watcom
+       echo "Extracting watcom"
+       tar xf ow-snapshot.tar.xz -C watcom
+       echo "Extracting djgpp"
+       unzip djgpp-mingw-gcc1220.zip
+       cp -v djgpp/i586-pc-msdosdjgpp/bin/dxe* djgpp/bin
 
-              - name: Compile wrappers
-                run: |
-                  echo "Adding Enviromental Variables"
-                  export WATCOM=$(pwd)/watcom
-                  export PATH=$WATCOM/binl64:$WATCOM/binl:$PATH
-                  export EDPATH=$WATCOM/eddat
-                  export INCLUDE=$WATCOM/lh
-                  export PATH=$(pwd)/djgpp/bin:$PATH
-                  echo "Compiling 3dfx wrappers"
-                  cd wrappers/3dfx
-                  mkdir build && cd build
-                  bash ../../../scripts/conf_wrapper
-                  make && make clean
-                  echo "Compiling Mesa wrappers"
-                  cd ../../mesa
-                  mkdir build && cd build
-                  bash ../../../scripts/conf_wrapper
-                  make all+ && make clean
+    - name: Compile wrappers
+      run: |
+        echo "Adding Environment Variables"
+        export WATCOM=$(pwd)/watcom
+        export PATH=$WATCOM/binnt:$PATH:$WATCOM/binw:$PATH
+        export EDPATH=$WATCOM/eddat
+        export PATH=$(pwd)/djgpp/bin:$PATH
+        echo "Compiling 3dfx wrappers"
+        cd wrappers/3dfx
+        mkdir build && cd build
+        bash ../../../scripts/conf_wrapper
+        make && make clean
+        echo "Compiling Mesa wrappers"
+        cd ../../mesa
+        mkdir build && cd build
+        bash ../../../scripts/conf_wrapper
+        make all+ && make clean
+        echo "Compiling Guest Openglide"
+        cd ../../extras/openglide
+        bash ./bootstrap
+        mkdir ../build && cd ../build
+        ../openglide/configure --disable-sdl && make 
+        echo "Compilng g2xwrap"
+        cd ../g2xwrap
 
-              - name: Installing wrappers
-                working-directory: ./wrappers/iso
-                run: |
-                 echo "Making Wrapper Disk"
-                 mkdir wrapfx
-                 mkdir -p wrapgl/icd
-                 cp -r ../3dfx/build/* ./wrapfx/
-                 rm -r ./wrapfx/lib* ./wrapfx/Makefile
-                 cp -r ../mesa/build/* ./wrapgl/
-                 rm -r ./wrapgl/Makefile
-                 echo $(git rev-parse HEAD) > commit\ id.txt
-                 cp ../texts/readme.txt readme.txt
-                 cp ../../LICENSE license.txt
-                 cp ../texts/icd-enable.reg wrapgl/icd/icd-enable.reg
-                 cp ../texts/readme_icd.txt wrapgl/icd/readme.txt
-                 mv wrapgl/qmfxgl32.dll wrapgl/icd/qmfxgl32.dll
-                 unix2dos autorun.inf open.bat readme.txt wrapgl/icd/readme.txt commit\ id.txt license.txt
-                 mkisofs -JR -V 3DFX-WRAPPERS -o ../wrappers.iso ../iso
-                 echo "Finished build at $(date)"
+    - name: Installing wrappers
+      working-directory: ./wrappers/iso
+      run: |
+       echo "Making Wrapper Disk"
+       mkdir -p wrapgl/icd wrapfx openglide g2xwrap
+       cp -r ../3dfx/build/* ./wrapfx/
+       rm -r ./wrapfx/lib* ./wrapfx/Makefile
+       cp -r ../mesa/build/* ./wrapgl/
+       rm -r ./wrapgl/Makefile
+       cp ../extra/build/.libs/libglide2x.dll openglide/glide2x.dll
+       cp ../extra/build/.libs/libglide3x.dll openglide/glide3x.dll
+       strip openglide/*
+       cp -rv ../extra/g2xwrap/*.dll g2xwrap/
+       bash ../../scripts/sign_binary
+       cp ../texts/readme.txt readme.txt
+       cp ../../LICENSE license.txt
+       cp ../texts/icd-enable.reg wrapgl/icd/icd-enable.reg
+       cp ../texts/readme_icd.txt wrapgl/icd/readme.txt
+       mv wrapgl/qmfxgl32.dll wrapgl/icd/qmfxgl32.dll
+       unix2dos autorun.inf open.bat readme.txt wrapgl/icd/readme.txt commit\ id.txt license.txt
+       cd ..
+       xorriso -as mkisofs -JR -V "VMADDONS-$(git log --format="%h" -n 1)" -o wrappers.iso iso
+       mkisofs -JR -V 3DFX-WRAPPERS -o ../wrappers.iso ../iso
+       echo "Finished build at $(date)"
 
-              - name: Uploading wrappers
-                uses: actions/upload-artifact@v4
-                with:
-                  name: wrappers-${{ env.pkgver }}-artifact
-                  path: ./wrappers
+    - name: Uploading wrappers
+      uses: actions/upload-artifact@v4
+      with:
+        name: wrappers-${{ env.pkgver }}-artifact
+        path: ./wrappers

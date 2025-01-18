@@ -15,6 +15,11 @@ qemu-3dfx-arch/
 *iso
 *qcw
 *qcow
+*qcow2
+install/
+install_dir/
+build-timestamp.txt
+version.txt
 
 # Ignore versions of qemu src
 qemu-9*
@@ -25,12 +30,12 @@ qemu-6*
 # Wrappers & ISO folders 
 wrappers/iso/commit\ id.txt
 wrappers/iso/readme.txt
-wrappers/license.txt
-wrappers/wrapgl
-wrappers/wrapfx
-wrappers/drivers
-wrappers/win32
-wrappers/win64
+wrappers/iso/license.txt
+wrappers/iso/wrapgl
+wrappers/iso/wrapfx
+wrappers/iso/drivers
+wrappers/iso/win32
+wrappers/iso/win64
 wrappers.iso
 
 # Zip folders

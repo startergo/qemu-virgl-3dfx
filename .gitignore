@@ -8,8 +8,6 @@ bin/pkg/
 build/
 wrappers/3dfx/build
 wrappers/mesa/build
-qemu-3dfx/
-qemu-3dfx-arch/
 *iso
 *qcw
 *qcow

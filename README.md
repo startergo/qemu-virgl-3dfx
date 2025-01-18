@@ -89,7 +89,7 @@ Simple guide to apply the patch:<br>
 
 This way adds VirGL patches for the binary (Windows and MacOS)
 
-- Recommended for 8.2.x or 7.2.0 only!
+- Recommended for 8.2.x or 7.2.x only!
 - If you compile the binary using patched VirGL package without patching it first will have an error. ([reference](https://github.com/msys2/MINGW-packages/issues/10547))
 
 ## Building Guest Wrappers

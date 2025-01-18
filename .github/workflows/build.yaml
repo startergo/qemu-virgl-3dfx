@@ -30,6 +30,7 @@ jobs:
           base 
           base-devel
           dos2unix
+          gcc
           git
           make
           ninja
@@ -148,7 +149,7 @@ jobs:
         QEMU-3dfx-arch (Windows Build)
         =================================================
         Github Actions Artifact Build
-        Version $(git describe --tags)
+        Version ${{ env.pkgver }}
         Built using ${MSYSTEM} 
         EOF
         echo "Finished build at $(date)"
@@ -180,6 +181,7 @@ jobs:
           base
           base-devel
           dos2unix
+          gcc
           git
           make
           ninja
@@ -298,7 +300,7 @@ jobs:
         QEMU-3dfx-arch (Windows Build)
         =================================================
         Github Actions Artifact Build
-        Version $(git describe --tags)
+        Version ${{ env.pkgver }}
         Built using ${MSYSTEM} 
         EOF
         echo "Finished build at $(date)"

@@ -5,8 +5,6 @@ djgpp/
 watcom/
 bin/src/
 bin/pkg/
-bin/qemu-3dfx
-bin/qemu-3dfx-arch
 build/
 wrappers/3dfx/build
 wrappers/mesa/build

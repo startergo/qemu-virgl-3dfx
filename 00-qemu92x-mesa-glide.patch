@@ -172,6 +172,17 @@ diff -Nru ../orig/qemu-9.2.0/include/ui/console.h ./include/ui/console.h
 diff -Nru ../orig/qemu-9.2.0/meson.build ./meson.build
 --- ../orig/qemu-9.2.0/meson.build
 +++ ./meson.build
+@@ -336,9 +336,9 @@
+ # provides these semantics.)
+ 
+ qemu_common_flags = [
+   '-D_GNU_SOURCE', '-D_FILE_OFFSET_BITS=64', '-D_LARGEFILE_SOURCE',
+-  '-fno-strict-aliasing', '-fno-common', '-fwrapv' ]
++  '-fno-strict-aliasing', '-fno-common', '-fwrapv', '-march=native']
+ qemu_cflags = []
+ qemu_ldflags = []
+ 
+ if host_os == 'darwin'
 @@ -1561,6 +1561,7 @@
      error('sdl-image required, but SDL was @0@'.format(
            get_option('sdl').disabled() ? 'disabled' : 'not found'))

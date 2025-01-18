@@ -373,7 +373,7 @@ jobs:
         bash ../../../scripts/conf_wrapper
         make all+ && make clean
         echo "Compiling Guest Openglide"
-        cd ../extra/openglide/
+        cd ../../extra/openglide/
         bash ./bootstrap
         mkdir ../build && cd ../build
         ../openglide/configure --disable-sdl && make 

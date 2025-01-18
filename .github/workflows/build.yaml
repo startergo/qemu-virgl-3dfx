@@ -373,12 +373,13 @@ jobs:
         bash ../../../scripts/conf_wrapper
         make all+ && make clean
         echo "Compiling Guest Openglide"
-        cd ../../extras/openglide
+        cd ../extra/openglide/
         bash ./bootstrap
         mkdir ../build && cd ../build
         ../openglide/configure --disable-sdl && make 
         echo "Compilng g2xwrap"
         cd ../g2xwrap
+        make
 
     - name: Installing wrappers
       shell: msys2 {0}

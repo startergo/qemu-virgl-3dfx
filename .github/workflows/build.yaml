@@ -177,7 +177,7 @@ jobs:
         update: true
         install: >-
           base
-          base-devvel
+          base-devel
           dos2unix
           git
           make
@@ -331,6 +331,7 @@ jobs:
          git
          unzip
          vim
+         wget
          xorriso
          mingw-w64-i686-autotools
          mingw-w64-i686-binutils

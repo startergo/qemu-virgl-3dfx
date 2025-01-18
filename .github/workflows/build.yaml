@@ -404,7 +404,6 @@ jobs:
        unix2dos autorun.inf open.bat readme.txt wrapgl/icd/readme.txt commit\ id.txt license.txt
        cd ..
        xorriso -as mkisofs -JR -V "VMADDONS-$(git log --format="%h" -n 1)" -o wrappers.iso iso
-       mkisofs -JR -V 3DFX-WRAPPERS -o ../wrappers.iso ../iso
        echo "Finished build at $(date)"
 
     - name: Uploading wrappers

@@ -3,8 +3,10 @@ This folder contains the source codes for wrappers that make pass-through possib
 
 ## Content
     3dfx          - Glide wrappers for supported guest OS/environment (DOS/Windows/DJGPP/Linux)
-    mesa          - MESA GL wrapper for supported guest OS/environment (Windows)
+    extra         - Old PC Games Addons for QEMU
+    fxlib         - System Driver wrapper for supported guest OS/environment (Windows)
     iso           - Wrapper Disk folder
+    mesa          - MESA GL wrapper for supported guest OS/environment (Windows)
     texts         - Some texts and readme
     
 ## Building Guest Wrappers

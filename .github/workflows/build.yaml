@@ -142,6 +142,7 @@ jobs:
        run: |
         echo "Installing build to output"
         make install
+        cd ../install_dir
         bash ../scripts/sign_binary
         cat <<EOF > version.txt
         QEMU-3dfx-arch (Windows Build)
@@ -291,6 +292,7 @@ jobs:
       run: |
         echo "Installing build to output"
         make install
+        cd ../install_dir
         bash ../scripts/sign_binary
         cat <<EOF > version.txt
         QEMU-3dfx-arch (Windows Build)
@@ -312,9 +314,6 @@ jobs:
    Wrappers:
    
     runs-on: windows-2019       
-    env:
-     pkgver: '9.2.0'
-     mspkg: 'mingw-w64-i686'
      
     steps:  
     - name: Checkout repo
@@ -409,5 +408,5 @@ jobs:
     - name: Uploading wrappers
       uses: actions/upload-artifact@v4
       with:
-        name: wrappers-${{ env.pkgver }}-artifact
+        name: wrappers-artifact
         path: ./wrappers

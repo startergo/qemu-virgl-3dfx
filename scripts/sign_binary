@@ -71,7 +71,6 @@ if [[ $platform == 'wrappers' ]]; then
 cat <<EOF > commit\ id.txt
 QEMU-3dfx-arch VMAddons ISO
 =================================================
-Version $(git describe --tags)
 Commit $(git rev-parse HEAD)
 
 refer to readme.txt for more information

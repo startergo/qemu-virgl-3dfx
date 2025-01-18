@@ -6,10 +6,10 @@ For more info. Refer to the [original repo](https://github.com/kjliew/qemu-3dfx)
     bin/disks            - Floppy Disks to make installation better
     qemu-0/hw/3dfx       - Overlay for QEMU source tree to add 3Dfx Glide pass-through device model
     qemu-1/hw/mesa       - Overlay for QEMU source tree to add MESA GL pass-through device model
-    qemu-exp             - Experimental Folders
-    packages             - Script for building the packages (Arch Linux)
+    qemu-exp             - Experimental Folders and deprecated files
+    packages             - PKGBUILD Script for building the packages (Arch Linux)
     scripts/sign_commit  - Script for stamping commit id
-    virgl3d              - VirGL with SDL2 OpenGL patches
+    virgl3d              - VirGL with SDL2 EGL/OpenGL patches
     wrappers/3dfx        - Glide wrappers for supported guest OS/environment (DOS/Windows/DJGPP/Linux)
     wrappers/mesa        - MESA GL wrapper for supported guest OS/environment (Windows)
 
@@ -29,14 +29,21 @@ This repository includes patches from upstream and my patches that work on lates
 
 ## QEMU Windows Guests Glide/OpenGL/Direct3D Acceleration
 Witness, experience and share your thoughts on modern CPU/GPU prowess for retro Windows games on Apple Silicon macOS, Windows 10/11 and modern Linux. Most games can be installed and played in pristine condition without the hassle of hunting down unofficial, fan-made patches to play them on Windows 10/later or modern Linux/Wine. And now it's updated for rolling release and added some tools and libraries i copied on the internet to make the experience better (as long i have free time).
-- Original repository ( https://github.com/kjliew/qemu-3dfx)
+- Original repository (https://github.com/kjliew/qemu-3dfx)
 - YouTube channel (https://www.youtube.com/@qemu-3dfx/videos)
 - VOGONS forums (https://www.vogons.org)
 - Wiki (https://github.com/kjliew/qemu-3dfx/wiki)
+- Repository's Wiki (https://github.com/kharovtobi/qemu-3dfx-arch/wiki)
 ## Downloading QEMU
-(https://github.com/kharovtobi/qemu-3dfx/releases)
 
-This includes Windows Binaries and old PKGBUILD files
+**Download Latest Build [Here](https://github.com/kharovtobi/qemu-3dfx-arch/releases/latest)**
+
+Includes Windows Binaries and old PKGBUILD files 
+
+**Download Github Actions Build [Here](https://github.com/kharovtobi/qemu-3dfx-arch/actions/workflows/build.yaml/)**
+
+Includes latest commit Windows Binaries and Wrappers (requires a Github Account)
+
 
 ## Building QEMU
 There are two ways to build this repo. While this is repo is used for Arch Linux, It can also build on other OS like Windows 10 with MSYS2 too. MINGW64 is recommended as compiling with UCRT64 may have segmentation fault when using `-boot` command
@@ -82,7 +89,7 @@ Simple guide to apply the patch:<br>
 
 This way adds VirGL patches for the binary (Windows and MacOS)
 
-- Recommended for 8.2.x only!
+- Recommended for 8.2.x or 7.2.0 only!
 - If you compile the binary using patched VirGL package without patching it first will have an error. ([reference](https://github.com/msys2/MINGW-packages/issues/10547))
 
 ## Building Guest Wrappers

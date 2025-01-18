@@ -339,6 +339,7 @@ jobs:
          mingw-w64-i686-tools
 
     - name: Adding optional support
+      shell: msys2 {0}
       run:  |
        echo "initialize submodules"
        git submodule update --init --recursive
@@ -354,6 +355,7 @@ jobs:
        cp -v djgpp/i586-pc-msdosdjgpp/bin/dxe* djgpp/bin
 
     - name: Compile wrappers
+      shell: msys2 {0}
       run: |
         echo "Adding Environment Variables"
         export WATCOM=$(pwd)/watcom
@@ -379,6 +381,7 @@ jobs:
         cd ../g2xwrap
 
     - name: Installing wrappers
+      shell: msys2 {0}
       working-directory: ./wrappers/iso
       run: |
        echo "Making Wrapper Disk"

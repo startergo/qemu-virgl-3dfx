@@ -4,28 +4,6 @@
 platform='unknown'
 unamestr=$(uname -o)
 
-# Check if its msys2 environment
-if [[ -z "$MSYSTEM" ]]; then
-    echo "you running MSYS2?" >&2
-    exit 1
-fi
-
-case "$MSYSTEM" in
-    UCRT64)
-        echo "Running in UCRT64 environment."
-        ;;
-    MINGW64)
-        echo "Running in MINGW64 environment."
-        ;;
-    MINGW32)
-        echo "Running in MINGW32 environment."
-        ;;
-    *)
-        echo "Running in an unsupported environment: $MSYSTEM" >&2
-        exit 1
-        ;;
-esac
-
 # Check if the folder it checks is in iso folder
 if [ -f "$(pwd)/qemu.ico" ] || [ -f "$(pwd)/open.bat" ] || [ -f "$(pwd)/autorun.inf" ]; then
    platform='wrappers'

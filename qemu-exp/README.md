@@ -9,7 +9,7 @@ My planned roadmap i'll never make and if i actually did, its unexpected and may
 The content is inside this folder or already released in this repository.
 - Updating QEMU-3dfx to latest Version
 - Windows binaries
-- Host & Guest OpenGlide binaries?
+- Host OpenGlide binaries
 
 ## Planned Content
 
@@ -17,9 +17,11 @@ The content is inside this folder or already released in this repository.
 - Ubuntu/Debian binaries and .deb packages
 - PKGBUILD for MSYS2
 - Build Automation
+- GUI frontend using Qtemu
 
 ## Deprecated Content
 - `buildiso.sh` Shell Script
+
 ## Cancelled/Removed Content
 - Hypervisor support for Windows 8.1 and people not using Hyper-V with [**GVM support**](https://github.com/qemu-gvm/qemu-gvm)
 - Game controllers support with [**QEMU USB Gamepad**](https://www.reddit.com/r/VFIO/comments/878ymp/gamepad_support_in_qemu/?rdt=42637) (Linux Only)

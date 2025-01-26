@@ -8,14 +8,22 @@ bin/pkg/
 build/
 wrappers/3dfx/build
 wrappers/mesa/build
-*iso
-*qcw
-*qcow
-*qcow2
+*.iso
+*.qcw
+*.qcow
+*.qcow2
 install/
 install_dir/
+openglide-3dfx/src/openglide
 build-timestamp.txt
 version.txt
+*.log
+*.part
+
+# Git repositories from PKGBUILD
+packages/qemu-3dfx-arch/qemu-3dfx
+packages/qemu-3dfx/qemu-3dfx
+packages/openglide-3dfx/openglide
 
 # Ignore versions of qemu src
 qemu-9*

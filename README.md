@@ -36,9 +36,9 @@ Witness, experience and share your thoughts on modern CPU/GPU prowess for retro 
 - Repository's Wiki (https://github.com/kharovtobi/qemu-3dfx-arch/wiki)
 ## Downloading QEMU
 
-**Download Latest Build [Here](https://github.com/kharovtobi/qemu-3dfx-arch/releases/latest)**
+**Download Stable Build [Here](https://github.com/kharovtobi/qemu-3dfx-arch/releases/latest)**
 
-Includes Windows Binaries and old PKGBUILD files 
+Includes released Windows Binaries,Wrappers,Addons and old PKGBUILD files 
 
 **Download Github Actions Build [Here](https://github.com/kharovtobi/qemu-3dfx-arch/actions/workflows/build.yaml/)**
 
@@ -46,7 +46,7 @@ Includes latest commit Windows Binaries and Wrappers (requires a Github Account)
 
 
 ## Building QEMU
-There are two ways to build this repo. While this is repo is used for Arch Linux, It can also build on other OS like Windows 10 with MSYS2 too. MINGW64 is recommended as compiling with UCRT64 may have segmentation fault when using `-boot` command
+There are two ways to build this repo. While this is repo is used for Arch Linux, It can also build on other OS like Windows 10 with MSYS2 too.
 
 **Convenience Way**
 
@@ -84,6 +84,7 @@ Simple guide to apply the patch:<br>
 - This guide makes and installs binaries to install_dir
 - You can also patch any versions in 9.2.x
 - All patch hunks must be successful in order for the binary to run properly or you may have BSOD when running Windows 98 for the first time and not work as intended.
+- This steps may be subject to change as there may be errors when compiling. refer to [cflag.txt](cflag.txt) and add it to configure.
 
 **VirGL with SDL2 OpenGL Support**
 
@@ -93,7 +94,7 @@ This way adds VirGL patches for the binary (Windows and MacOS)
 - If you compile the binary using patched VirGL package without patching it first will have an error. ([reference](https://github.com/msys2/MINGW-packages/issues/10547))
 
 ## Building Guest Wrappers
-Refer to https://github.com/kharovtobi/qemu-3dfx-arch/blob/master/wrappers/README.md for more info.
+Refer to [Wrapper Readme](wrappers/README.md) for more info.
 
 ## Installing Guest Wrappers
 **For Win9x/ME:**  
@@ -111,4 +112,4 @@ Refer to https://github.com/kharovtobi/qemu-3dfx-arch/blob/master/wrappers/READM
 ## Credits
 - KJ Liew - For making QEMU-3dfx 
 - JHRobotics - For making ICD support
-- cyanea-bt - Script reference
+- cyanea-bt - For script reference used for `build.yaml`

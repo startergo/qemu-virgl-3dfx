@@ -43,7 +43,6 @@ refer to https://github.com/kharovtobi/qemu-xtra/blob/master/README.md for more 
 - `git` for stamping commit ID to text
 - `mkisofs` or `xorriso` for making iso
 - `dos2unix` for changing control characters to Windows CRLF (important)
-- `bsdtar, vmaddons.iso` for copying DirectX wrappers and extras (optional)
 
 **Packaging**
 
@@ -84,7 +83,7 @@ Since kjliew did not provide source code for Wine binaries that work in QEMU-3df
 
 
 ## Notes
- - If you got some problems with the wrappers (i.e wrappers compiled without 3dfx patches). you should download it on actions tab via "Build Stable Branch" and choose the latest build.
+ - If you got some problems with the wrappers (i.e wrappers compiled without 3dfx patches). you should download it on actions tab via "Build Stable Branch" and choose the right commit build.
  - Using NVIDIA driver on Linux may crash QEMU-3dfx when running a OpenGL application. using nouveau can solve it but it still crashes when running DirectX apps instead.
  - ICD support is included via JHRobotics forked repo but disabled by default (im sorry)
  - Making mesa wrappers only compile opengl32.dll and wgltest.exe only. If you want all of them to compile including ICD support, run command in `wrappers/mesa/build` with Makefile

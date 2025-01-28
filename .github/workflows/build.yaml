@@ -46,7 +46,9 @@ jobs:
           ${{ env.mspkg }}-python-sphinx_rtd_theme
           ${{ env.mspkg }}-angleproject
           ${{ env.mspkg }}-autotools
+          ${{ env.mspkg }}-binutils
           ${{ env.mspkg }}-toolchain
+          ${{ env.mspkg }}-tools
           ${{ env.mspkg }}-7zip
           ${{ env.mspkg }}-cairo
           ${{ env.mspkg }}-capstone
@@ -137,6 +139,19 @@ jobs:
         echo "Compiling Build"
         make -j$(nproc)
 
+     - name: Compiling Host Openglide
+       working-directory: ./build
+       shell: msys2 {0}
+       run: |
+        git submodule update --init --recursive
+        cd ../wrappers/extra/openglide
+        bash ./bootstrap
+        mkdir ../build && cd ../build
+        ../openglide/configure --disable-sdl && make
+        mkdir ../../../install_dir
+        cp -v .libs/libglide2x.dll ../../../install_dir/glide2x.dll
+        cp -v .libs/libglide3x.dll ../../../install_dir/glide3x.dll
+
      - name: Installing build
        working-directory: ./build
        shell: msys2 {0}
@@ -197,7 +212,9 @@ jobs:
           ${{ env.mspkg }}-python-sphinx_rtd_theme
           ${{ env.mspkg }}-angleproject
           ${{ env.mspkg }}-autotools
+          ${{ env.mspkg }}-binutils
           ${{ env.mspkg }}-toolchain
+          ${{ env.mspkg }}-tools
           ${{ env.mspkg }}-7zip
           ${{ env.mspkg }}-cairo
           ${{ env.mspkg }}-capstone
@@ -287,6 +304,19 @@ jobs:
       run: |
         echo "Compiling Build"
         make -j$(nproc)
+
+    - name: Compiling Host Openglide
+      working-directory: ./build
+      shell: msys2 {0}
+      run: |
+        git submodule update --init --recursive
+        cd ../wrappers/extra/openglide
+        bash ./bootstrap
+        mkdir ../build && cd ../build
+        ../openglide/configure --disable-sdl && make
+        mkdir ../../../install_dir
+        cp -v .libs/libglide2x.dll ../../../install_dir/glide2x.dll
+        cp -v .libs/libglide3x.dll ../../../install_dir/glide3x.dll
 
     - name: Installing build
       working-directory: ./build
@@ -387,14 +417,11 @@ jobs:
       working-directory: ./wrappers/iso
       run: |
        echo "Making Wrapper Disk"
-       mkdir -p wrapgl/icd wrapfx openglide g2xwrap
+       mkdir -p wrapgl/icd wrapfx g2xwrap
        cp -r ../3dfx/build/* ./wrapfx/
        rm -r ./wrapfx/lib* ./wrapfx/Makefile
        cp -r ../mesa/build/* ./wrapgl/
        rm -r ./wrapgl/Makefile
-       cp ../extra/build/.libs/libglide2x.dll openglide/glide2x.dll
-       cp ../extra/build/.libs/libglide3x.dll openglide/glide3x.dll
-       strip openglide/*
        cp -rv ../extra/g2xwrap/*.dll g2xwrap/
        bash ../../scripts/sign_binary
        cp ../texts/readme.txt readme.txt

@@ -38,7 +38,7 @@ Witness, experience and share your thoughts on modern CPU/GPU prowess for retro 
 
 **Download Stable Build [Here](https://github.com/kharovtobi/qemu-3dfx-arch/releases/latest)**
 
-Includes released Windows Binaries,Wrappers,Addons and old PKGBUILD files 
+Includes released Standalone Windows Binaries,Wrappers,Addons and old PKGBUILD files 
 
 **Download Github Actions Build [Here](https://github.com/kharovtobi/qemu-3dfx-arch/actions/workflows/build.yaml/)**
 

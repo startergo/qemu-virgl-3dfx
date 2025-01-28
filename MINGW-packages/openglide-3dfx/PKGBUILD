@@ -1,8 +1,11 @@
 # Based of openglide-git by Jamie Christian <itschristian at gmail dot com>
 # Courtesy of kharovtobi <https://github.com/kharovtobi>
+# Do not post this to AUR (its windows, why you gonna do it?)
+# PKGBUILD not working, needs to be fixed, do not use!
 
-_pkgname=openglide
-pkgname=$_pkgname-3dfx
+_pkgname=${MINGW_PACKAGE_PREFIX}
+_realname=openglide
+pkgname="$_pkgname"-"$_realname"-3dfx
 pkgver=1.0.0
 pkgrel=1
 pkgdesc="Host OpenGlide wrapper for QEMU-3dfx"
@@ -10,12 +13,14 @@ arch=(x86_64)
 url="https://github.com/kjliew/qemu-xtra"
 license=('GPL2' 'LGPL-2.1')
 options=(!libtool)
-depends=('mesa' 'sdl' 'glu' 'libsm')
-makedepends=('git')
+makedepends=("${MINGW_PACKAGE_PREFIX}-binutils"
+             "${MINGW_PACKAGE_PREFIX}-gcc"
+             "${MINGW_PACKAGE_PREFIX}-tools"
+)
 conflicts=('openglide-git')
 source=(
   "$_pkgname::git+https://github.com/kjliew/qemu-xtra.git"
-  "q3dlog"
+  "q3dlog.sh"
 )
 md5sums=(
   'SKIP'
@@ -36,6 +41,6 @@ package() {
   cd "$srcdir/$_pkgname/build"
   make DESTDIR="$pkgdir/" install
   libtool --finish "$pkgdir"/usr/lib
-  install -Dm755 "$srcdir"/q3dlog "$pkgdir"/usr/bin/q3dlog
+  install -Dm755 "$srcdir"/q3dlog.sh "$pkgdir"/usr/bin/q3dlog
   install -Dm644 "$srcdir/$_pkgname/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
 }

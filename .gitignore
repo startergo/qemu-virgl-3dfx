@@ -21,6 +21,7 @@ version.txt
 *.part
 
 # Git repositories from PKGBUILD
+MINGW-packages/openglide-3dfx/qemu-xtra
 packages/qemu-3dfx-arch/qemu-3dfx
 packages/qemu-3dfx/qemu-3dfx
 packages/openglide-3dfx/openglide

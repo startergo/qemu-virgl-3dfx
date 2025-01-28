@@ -36,7 +36,7 @@ If you have Watcom installed, run command first
 ## Building Extras
 kjliew also created [qemu-xtra](https://github.com/kjliew/qemu-xtra) for extra addons that are not essential for QEMU-3dfx. One of them is QEMU-3dfx OpenGlide src.
 
-refer to https://github.com/kharovtobi/qemu-xtra/blob/master/README.md for more info about compiling them
+refer to [qemu-xtra Readme](/wrappers/extra/README.md) for more info about compiling them
 
 ## Packaging Guest Wrappers
 **Requirements**

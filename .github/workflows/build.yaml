@@ -139,7 +139,7 @@ jobs:
         echo "Compiling Build"
         make -j$(nproc)
 
-     - name: Compiling Host Openglide
+     - name: Compile Host Openglide
        working-directory: ./build
        shell: msys2 {0}
        run: |
@@ -151,6 +151,7 @@ jobs:
         mkdir ../../../install_dir
         cp -v .libs/libglide2x.dll ../../../install_dir/glide2x.dll
         cp -v .libs/libglide3x.dll ../../../install_dir/glide3x.dll
+        cp -v ../../../MINGW-packages/openglide-3dfx/q3dlog.sh ../../../install_dir/q3dlog.sh
 
      - name: Installing build
        working-directory: ./build
@@ -305,7 +306,7 @@ jobs:
         echo "Compiling Build"
         make -j$(nproc)
 
-    - name: Compiling Host Openglide
+    - name: Compile Host Openglide
       working-directory: ./build
       shell: msys2 {0}
       run: |
@@ -317,6 +318,7 @@ jobs:
         mkdir ../../../install_dir
         cp -v .libs/libglide2x.dll ../../../install_dir/glide2x.dll
         cp -v .libs/libglide3x.dll ../../../install_dir/glide3x.dll
+        cp -v ../../../MINGW-packages/openglide-3dfx/q3dlog.sh ../../../install_dir/q3dlog.sh
 
     - name: Installing build
       working-directory: ./build

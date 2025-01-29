@@ -68,7 +68,7 @@ This instructions are based in Arch Linux btw, in Bash Shell. Its simple because
 - Feel free to add anything to iso
 - mkisofs is not available on MSYS2. You may have to use xorriso or use [WinCDEmu](https://wincdemu.sysprogs.org/download/) 
 - xorriso equivalent is `xorriso -as mkisofs -o wrappers.iso ./iso`
-- dos2unix is recommended as texts encoded in LF while on Windows (until 1809) have text errors.
+- dos2unix is recommended as texts encoded in LF while on Windows (until 1803) have text errors.
 
 **Wine Support**
 

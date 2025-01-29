@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ -f ./glide2x.dll ]; then
+if [ -f ./libglide2x.dll ]; then
     echo "Standalone Build"
     GLIDE_DLL=./
     QEMU=./qemu-system-i386.exe
@@ -9,7 +9,7 @@ if [ -f ./glide2x.dll ]; then
     LD_LIBRARY_PATH=$GLIDE_DLL $QEMU -display sdl $@ 2>&1 | tee ./qemu-3dfx.log
 
 else
-    if [ ! -f $GLIDE_DLL/glide2x.dll ]; then
+    if [ ! -f $GLIDE_DLL/libglide2x.dll ]; then
         echo "System Build"
         GLIDE_DLL=/usr/lib
         echo "Missing Glide2x library at $GLIDE_DLL"

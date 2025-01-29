@@ -7,6 +7,7 @@ For more info. Refer to the [original repo](https://github.com/kjliew/qemu-3dfx)
     qemu-0/hw/3dfx       - Overlay for QEMU source tree to add 3Dfx Glide pass-through device model
     qemu-1/hw/mesa       - Overlay for QEMU source tree to add MESA GL pass-through device model
     qemu-exp             - Experimental Folders and deprecated files
+    MINGW-packages       - PKGBUILD Script for building the packages (Windows)
     packages             - PKGBUILD Script for building the packages (Arch Linux)
     scripts/sign_commit  - Script for stamping commit id
     virgl3d              - VirGL with SDL2 EGL/OpenGL patches

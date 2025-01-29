@@ -149,8 +149,8 @@ jobs:
         mkdir ../build && cd ../build
         ../openglide/configure --disable-sdl && make
         mkdir ../../../install_dir
-        cp -v .libs/libglide2x.dll ../../../install_dir/glide2x.dll
-        cp -v .libs/libglide3x.dll ../../../install_dir/glide3x.dll
+        cp -v .libs/libglide2x.dll ../../../install_dir/libglide2x.dll
+        cp -v .libs/libglide3x.dll ../../../install_dir/libglide3x.dll
         cp -v ../../../MINGW-packages/openglide-3dfx/q3dlog.sh ../../../install_dir/q3dlog.sh
 
      - name: Installing build
@@ -164,7 +164,7 @@ jobs:
         cat <<EOF > version.txt
         QEMU-3dfx-arch (Windows Build)
         =================================================
-        Github Actions Artifact Build
+        GitHub Actions Artifact Build
         Version ${{ env.pkgver }}
         Built using ${MSYSTEM} 
         EOF
@@ -316,8 +316,8 @@ jobs:
         mkdir ../build && cd ../build
         ../openglide/configure --disable-sdl && make
         mkdir ../../../install_dir
-        cp -v .libs/libglide2x.dll ../../../install_dir/glide2x.dll
-        cp -v .libs/libglide3x.dll ../../../install_dir/glide3x.dll
+        cp -v .libs/libglide2x.dll ../../../install_dir/libglide2x.dll
+        cp -v .libs/libglide3x.dll ../../../install_dir/libglide3x.dll
         cp -v ../../../MINGW-packages/openglide-3dfx/q3dlog.sh ../../../install_dir/q3dlog.sh
 
     - name: Installing build
@@ -331,7 +331,7 @@ jobs:
         cat <<EOF > version.txt
         QEMU-3dfx-arch (Windows Build)
         =================================================
-        Github Actions Artifact Build
+        GitHub Actions Artifact Build
         Version ${{ env.pkgver }}
         Built using ${MSYSTEM} 
         EOF

@@ -421,7 +421,7 @@ jobs:
        echo "Making Wrapper Disk"
        mkdir -p wrapgl/icd wrapfx g2xwrap
        cp -r ../3dfx/build/* ./wrapfx/
-       rm -r ./wrapfx/lib* ./wrapfx/Makefile
+       rm -r ./wrapfx/lib* ./wrapfx/*.o ./wrapfx/*.def ./wrapfx/*.c ./wrapfx/Makefile
        cp -r ../mesa/build/* ./wrapgl/
        rm -r ./wrapgl/Makefile
        cp -rv ../extra/g2xwrap/*.dll g2xwrap/
@@ -433,7 +433,7 @@ jobs:
        mv wrapgl/qmfxgl32.dll wrapgl/icd/qmfxgl32.dll
        unix2dos autorun.inf open.bat readme.txt wrapgl/icd/readme.txt commit\ id.txt license.txt
        cd ..
-       xorriso -as mkisofs -JR -V "VMADDONS-$(git log --format="%h" -n 1)" -o wrappers.iso iso
+       xorriso -as mkisofs -JR -V "VMWRAPPER-$(git log --format="%h" -n 1)" -o wrappers.iso iso
        echo "Finished build at $(date)"
 
     - name: Uploading wrappers

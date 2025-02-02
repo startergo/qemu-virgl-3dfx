@@ -12,12 +12,11 @@ The content is inside this folder or already released in this repository.
 - Host OpenGlide binaries
 
 ## Planned Content
-
 - How to compile other wrappers and tools for Addons Disk (Advanced Wrapper Disk)
 - Ubuntu/Debian binaries and .deb packages
 - PKGBUILD for MSYS2
 - Build Automation
-- GUI frontend using Qtemu
+- GUI frontend using QtEmu or EmuGUI
 
 ## Deprecated Content
 - `buildiso.sh` Shell Script

@@ -421,9 +421,9 @@ jobs:
        echo "Making Wrapper Disk"
        mkdir -p wrapgl/icd wrapfx g2xwrap
        cp -r ../3dfx/build/* ./wrapfx/
-       rm -r ./wrapfx/lib* ./wrapfx/*.o ./wrapfx/*.def ./wrapfx/*.c ./wrapfx/Makefile
+       rm -rf ./wrapfx/lib* ./wrapfx/*.o ./wrapfx/*.def ./wrapfx/*.c ./wrapfx/Makefile
        cp -r ../mesa/build/* ./wrapgl/
-       rm -r ./wrapgl/Makefile
+       rm -rf ./wrapgl/Makefile
        cp -rv ../extra/g2xwrap/*.dll g2xwrap/
        bash ../../scripts/sign_binary
        cp ../texts/readme.txt readme.txt

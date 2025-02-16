@@ -36,6 +36,7 @@ qemu-6*
 wrappers/iso/commit\ id.txt
 wrappers/iso/readme.txt
 wrappers/iso/license.txt
+wrappers/iso/g2xwrap
 wrappers/iso/wrapgl
 wrappers/iso/wrapfx
 wrappers/iso/drivers

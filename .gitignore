@@ -19,6 +19,7 @@ build-timestamp.txt
 version.txt
 *.log
 *.part
+*.sig
 
 # Git repositories from PKGBUILD
 MINGW-packages/openglide-3dfx/qemu-xtra

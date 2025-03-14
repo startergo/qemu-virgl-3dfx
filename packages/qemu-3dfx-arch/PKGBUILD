@@ -5,7 +5,7 @@
 
 _pkgname=qemu-3dfx
 pkgname="$_pkgname"-arch
-_qemuver=9.2.1
+_qemuver=9.2.2
 pkgver=v9.2.1.r514.d9e5987
 pkgrel=1
 pkgdesc="MESA GL/3Dfx Glide pass-through for QEMU (Forked repository)"
@@ -22,7 +22,9 @@ makedepends=(
     "cdrtools"
     "curl"
     "dtc"
+    "djgpp-binutils"
     "djgpp-djcrx"
+    "djgpp-gcc"
     "dos2unix"
     "fuse3"
     "gcc-libs"
@@ -106,8 +108,8 @@ source=(
 noextract=("qemu-${_qemuver}.tar.xz")
 sha256sums=(
     'SKIP'
-    'b7b0782ead63a5373fdfe08e084d3949a9395ec196180286b841f78a464d169c'
-    'SKIP'
+    '752eaeeb772923a73d536b231e05bcc09c9b1f51690a41ad9973d900e4ec9fbf'
+    'b94ec59a18f2fc8c0eda31860d2eeed2bf92fe66db773b917de311dece796bf0'
 )
 
 pkgver() {
@@ -122,7 +124,10 @@ prepare() {
     # Patch source
     cd "$_pkgname"/qemu-${_qemuver}
     rsync -r ../qemu-0/hw/3dfx ../qemu-1/hw/mesa ./hw/
-    patch -p0 -i  ../00-qemu92x-mesa-glide.patch
+
+    # Change patch per major release
+    patch -p0 -i  ../00-qemu92x-mesa-glide.kht.patch
+
     bash ../scripts/sign_commit
     rm -rf "$srcdir"/"$_pkgname"/build
     mkdir -p "$srcdir"/"$_pkgname"/build
@@ -133,7 +138,7 @@ build() {
     cd "$srcdir"/"$_pkgname"/build
     ../qemu-${_qemuver}/configure --target-list="i386-softmmu x86_64-softmmu" --disable-xen --disable-libnfs --extra-cflags="-march=native -mtune=native -O3 -flto=auto"
     make clean
-    make -j(nproc) qemu-system-i386 qemu-system-x86_64
+    make -j$(nproc) qemu-system-i386 qemu-system-x86_64
 
     # Build Wrappers
     source /opt/watcom/owsetenv.sh

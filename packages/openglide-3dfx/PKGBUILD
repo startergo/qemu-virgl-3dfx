@@ -3,7 +3,7 @@
 
 _pkgname=openglide
 pkgname=$_pkgname-3dfx
-pkgver=r117.a1c3605
+pkgver=r119.f067b14
 pkgrel=1
 pkgdesc="Host OpenGlide wrapper for QEMU-3dfx"
 arch=(x86_64)

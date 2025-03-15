@@ -19,7 +19,7 @@ This repository includes patches from upstream and my patches that work on lates
 
 **My patches**
 
-    00-qemu92x-mesa-glide.kht.patch - Patch for QEMU version 9.2.x (MESA & Glide)
+    00-qemu92x-mesa-glide.kht.patch - Patch for QEMU version 9.2.x (MESA & Glide) (deprecated)
     01-qemu91x-mesa-glide.patch - Patch for QEMU version 9.1.x (MESA & Glide)
 
 **KJ Liew's patches**
@@ -84,6 +84,7 @@ Simple guide to apply the patch:<br>
 
 - This guide makes and installs binaries to install_dir
 - You can also patch any versions in 9.2.x
+- My patch is deprecated for the time being, do not use it.
 - All patch hunks must be successful in order for the binary to run properly or you may have BSOD when running Windows 98 for the first time and not work as intended.
 - This steps may be subject to change as there may be errors when compiling. refer to [cflag.txt](cflag.txt) and add it to configure.
 

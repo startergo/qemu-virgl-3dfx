@@ -451,26 +451,28 @@ jobs:
       pkgver: '9.2.1'
       patch: '00-qemu92x-mesa-glide.patch'
       ACTIONS_STEP_DEBUG: true      
-      PKG_CONFIG_PATH: "/opt/homebrew/opt/cyrus-sasl/lib/pkgconfig:/opt/homebrew/opt/zlib/lib/pkgconfig:/opt/homebrew/opt/jpeg/lib/pkgconfig:/opt/homebrew/opt/libxml2/lib/pkgconfig:/opt/homebrew/opt/xz/lib/pkgconfig:/opt/homebrew/opt/gnutls/lib/pkgconfig:/Users/runner/work/qemu-3dfx-arch/qemu-3dfx-arch/lib/pkgconfig:/opt/local/lib/pkgconfig"
+      PKG_CONFIG_PATH: "/opt/homebrew/opt/cyrus-sasl/lib/pkgconfig:/opt/homebrew/opt/zlib/lib/pkgconfig:/opt/homebrew/opt/jpeg/lib/pkgconfig:/opt/homebrew/opt/libxml2/lib/pkgconfig:/opt/homebrew/opt/xz/lib/pkgconfig:/opt/homebrew/opt/gnutls/lib/pkgconfig:/Users/runner/work/qemu-virgl-3dfx/qemu-virgl-3dfx/lib/pkgconfig"
+    
     steps:
-      - name: Set up environment variables
-        id: vars
-        run: echo "TAG_NAME=9.2.1-${{ github.run_id }}" >> $GITHUB_ENV
-
+      # Step 1: Basic setup
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Cache dependencies
-        id: cache-deps
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/Library/Caches/Homebrew
-            ~/Library/Logs/Homebrew
-          key: ${{ runner.os }}-brew-${{ hashFiles('**/Brewfile.lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-brew-
-      
+      - name: Set up environment variables
+        id: vars
+        run: |
+          # Get the latest release tag that matches the pattern for current version
+          LATEST_TAG=$(git ls-remote --tags origin | grep -o "refs/tags/${{ env.pkgver }}-[0-9]*$" | sort -V | tail -n1 | grep -o '[0-9]*$' || echo "0")
+          
+          # Increment the counter
+          NEXT_NUMBER=$((LATEST_TAG + 1))
+          
+          # Set the new tag using the pkgver variable
+          TAG_NAME="${{ env.pkgver }}-${NEXT_NUMBER}"
+          echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
+          echo "TAG_NAME=${TAG_NAME}" >> $GITHUB_ENV
+          echo "Using tag: ${TAG_NAME}"
+
       - name: Install dependencies
         run: |                  
           brew install $(brew deps --include-build qemu) || true
@@ -479,124 +481,37 @@ jobs:
           brew install libiscsi libnfs libssh2 libx11 libxkbcommon libxml2 libxxf86vm mesa opus sdl12-compat sdl2 sdl2_image || true
           brew install sphinx-doc tree usbredir wget zlib || true                  
 
-      - name: Cache build
-        id: cache-build
-        uses: actions/cache@v4
-        with:
-          path: build
-          key: ${{ runner.os }}-build-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-build-
-
-      - name: Cache include and lib directories
-        id: cache-include-lib
+      # Step 2: Cache handling
+      - name: Cache depot_tools, angle, virglrenderer, libepoxy, and include
+        id: cache-deps
         uses: actions/cache@v4
         with:
           path: |
-            ${{ github.workspace }}/include
-            ${{ github.workspace }}/lib
-          key: ${{ runner.os }}-include-lib-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-include-lib-
+            depot_tools
+            source/angle/include
+            build/angle
+            build/virglrenderer
+            build/libepoxy
+            include
+            lib
+          key: ${{ runner.os }}-deps-v2-${{ hashFiles('**/depot_tools/**', '**/source/angle/include/**', '**/build/angle/**', '**/build/virglrenderer/**', '**/build/libepoxy/**', '**/include/**') }}
+          restore-keys: |          
+            ${{ runner.os }}-deps-v2-
 
-      - name: Cache depot_tools and angle directories
-        id: cache-depot-angle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ${{ github.workspace }}/depot_tools
-            ${{ github.workspace }}/source/angle/include
-          key: ${{ runner.os }}-depot-angle-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-depot-angle-
-
-      - name: Clean working directory
+      - name: Clean working directory if cache miss
+        if: steps.cache-deps.outputs.cache-hit != 'true'
         continue-on-error: true
         run: git clean -fdx -e depot_tools -e source/angle/include -e build/angle -e build/virglrenderer -e build/libepoxy -e include -e lib      
 
-      - name: Set up environment macOS Virgl
+      # Step 3: Source setup - conditioned on cache state
+      - name: Create directories
         run: |
-          if [ ! -d "include" ] || [ ! "$(ls -A include)" ] || [ ! -d "lib" ] || [ ! "$(ls -A lib)" ]; then
-            echo "Cache not found, setting up environment..."
-            set -eux
-            rm -rf include/*
-            find include/.* -maxdepth 1 -mindepth 1 -exec rm -rf {} +
-            rm -rf lib/*
-            find lib/.* -maxdepth 1 -mindepth 1 -exec rm -rf {} +
-            mkdir -p depot_tools build/qemu source/angle source/libepoxy source/virglrenderer source/qemu
-            git -C depot_tools init
-            git -C depot_tools fetch https://chromium.googlesource.com/chromium/tools/depot_tools 22df6f8e622dc3e8df8dc8b5d3e3503b169af78e
-            git -C depot_tools checkout FETCH_HEAD
-            cd source
-            echo "Downloading src"
-            wget -q https://download.qemu.org/qemu-${{ env.pkgver }}.tar.xz
-            echo "Extracting src"
-            tar xf qemu-${{ env.pkgver }}.tar.xz
-            cd ..            
-            export DEPOT_TOOLS_UPDATE=0
-            export PATH="$PWD/depot_tools:$PATH"
-            git -C source/angle init
-            git -C source/angle fetch https://chromium.googlesource.com/angle/angle fffbc739779a2df56a464fd6853bbfb24bebb5f6
-            git -C source/angle checkout FETCH_HEAD
-            git -C source/libepoxy init
-            git -C source/libepoxy fetch https://github.com/akihikodaki/libepoxy.git macos
-            git -C source/libepoxy checkout FETCH_HEAD
-            git -C source/virglrenderer init
-            git -C source/virglrenderer fetch https://github.com/akihikodaki/virglrenderer.git macos
-            git -C source/virglrenderer checkout FETCH_HEAD
-            cd source/angle
-            scripts/bootstrap.py
-            gclient sync -D
-            gn gen --args=is_debug=false ../../build/angle
-            cd ../..
-            ninja -C build/angle
-            echo "Setting up libepoxy build"
-            meson setup "-Dc_args=-I$PWD/source/angle/include" -Degl=yes -Dx11=false "--prefix=$PWD" build/libepoxy source/libepoxy
-            echo "Installing libepoxy"
-            meson install -C build/libepoxy
-            echo "Setting up virglrenderer build"
-            meson setup "-Dc_args=-I$PWD/source/angle/include" "--pkg-config-path=$PWD/lib/pkgconfig" "--prefix=$PWD" build/virglrenderer source/virglrenderer
-            echo "Installing virglrenderer"
-            meson install -C build/virglrenderer
-          else
-            echo "Using cached include and lib directories."
-          fi
-
-      - name: Cache installed include and lib files
-        uses: actions/cache@v4
-        with:
-          path: |
-            ${{ github.workspace }}/include
-            ${{ github.workspace }}/lib
-          key: ${{ runner.os }}-include-lib-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-include-lib-      
-
-      - name: Upload build-virglrenderer as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-virglrenderer
-          path: build/virglrenderer
-          if-no-files-found: warn
-          compression-level: 6
-          overwrite: false
-          include-hidden-files: true
-
-      - name: Upload build-libepoxy as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-libepoxy
-          path: build/libepoxy
-          if-no-files-found: warn
-          compression-level: 6
-          overwrite: false
-          include-hidden-files: true       
+          mkdir -p depot_tools build/qemu source/angle source/libepoxy source/virglrenderer source/qemu install_dir
 
       - name: Fetch and checkout QEMU source
         continue-on-error: true
         run: |
           echo "Downloading src"
-          mkdir -p source
           cd source
           if [ ! -d "qemu-${{ env.pkgver }}" ]; then
             wget -q https://download.qemu.org/qemu-${{ env.pkgver }}.tar.xz
@@ -607,27 +522,10 @@ jobs:
           fi
           cd ..
 
-      - name: Create build/qemu directory        
-        run: |
-          if [ "${{ steps.cache-include-lib.outputs.cache-hit }}" == 'true' ]; then
-            mkdir -p build/qemu
-          fi
-
-      - name: Prepare Angle
-        continue-on-error: true
-        run: |
-          if [ "${{ steps.cache-include-lib.outputs.cache-hit }}" == 'true' ]; then
-            export DEPOT_TOOLS_UPDATE=0
-            export PATH="$PWD/depot_tools:$PATH"          
-          fi     
-
-      - name: Create install_dir
-        run: mkdir -p install_dir
-
       - name: Patching build
         shell: bash
         continue-on-error: true
-        run:  |
+        run: |
           echo "Adding files to src"
           rsync -rv qemu-0/hw/3dfx qemu-1/hw/mesa source/qemu-${{ env.pkgver }}/hw/
           cd source/qemu-${{ env.pkgver }}
@@ -636,30 +534,89 @@ jobs:
           echo "Signing commit id to src"
           bash ../../scripts/sign_commit
 
+      - name: Debug directory structure
+        run: |
+          echo "Directory structure:"
+          find . -type d -maxdepth 3 | sort
+
+      # Step 4: Build dependencies if cache miss
+      - name: Build dependencies (cache miss)
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: |
+          echo "Cache not found, setting up environment..."
+          set -eux
+          rm -rf include/*
+          find include/.* -maxdepth 1 -mindepth 1 -exec rm -rf {} + 2>/dev/null || true
+          rm -rf lib/*
+          find lib/.* -maxdepth 1 -mindepth 1 -exec rm -rf {} + 2>/dev/null || true
+          
+          # Set up depot_tools
+          git -C depot_tools init
+          git -C depot_tools fetch https://chromium.googlesource.com/chromium/tools/depot_tools 22df6f8e622dc3e8df8dc8b5d3e3503b169af78e
+          git -C depot_tools checkout FETCH_HEAD
+          
+          # Set up ANGLE
+          export DEPOT_TOOLS_UPDATE=0
+          export PATH="$PWD/depot_tools:$PATH"
+          git -C source/angle init
+          git -C source/angle fetch https://chromium.googlesource.com/angle/angle fffbc739779a2df56a464fd6853bbfb24bebb5f6
+          git -C source/angle checkout FETCH_HEAD
+          
+          # Set up libepoxy and virglrenderer
+          git -C source/libepoxy init
+          git -C source/libepoxy fetch https://github.com/akihikodaki/libepoxy.git macos
+          git -C source/libepoxy checkout FETCH_HEAD
+          git -C source/virglrenderer init
+          git -C source/virglrenderer fetch https://github.com/akihikodaki/virglrenderer.git macos
+          git -C source/virglrenderer checkout FETCH_HEAD
+          
+          # Build ANGLE
+          cd source/angle
+          scripts/bootstrap.py
+          gclient sync -D
+          gn gen --args=is_debug=false ../../build/angle
+          cd ../..
+          ninja -C build/angle
+          
+          # Build libepoxy
+          echo "Setting up libepoxy build"
+          meson setup "-Dc_args=-I$PWD/source/angle/include" -Degl=yes -Dx11=false "--prefix=$PWD" build/libepoxy source/libepoxy
+          echo "Installing libepoxy"
+          meson install -C build/libepoxy
+          
+          # Build virglrenderer
+          echo "Setting up virglrenderer build"
+          meson setup "-Dc_args=-I$PWD/source/angle/include" "--pkg-config-path=$PWD/lib/pkgconfig" "--prefix=$PWD" build/virglrenderer source/virglrenderer
+          echo "Installing virglrenderer"
+          meson install -C build/virglrenderer
+
+      # Step 5: Build QEMU
       - name: Configure Qemu build
-        continue-on-error: true
         working-directory: ./build/qemu
         shell: bash
         run: |
           echo "Configuring build"                
-          PKG_CONFIG_PATH="$PWD/../../lib/pkgconfig" ../../source/qemu-${{ env.pkgver }}/configure "--extra-cflags=-I$PWD/../../source/angle/include -march=native -mtune=native -flto=auto" "--extra-ldflags=-L$PWD/../../lib" "--prefix=$PWD/../../install_dir"    
-         
+          PKG_CONFIG_PATH="$PWD/../../lib/pkgconfig" ../../source/qemu-${{ env.pkgver }}/configure \
+            "--extra-cflags=-I$PWD/../../source/angle/include -march=native -mtune=native -flto=auto" \
+            "--extra-ldflags=-L$PWD/../../lib" \
+            "--prefix=$PWD/../../install_dir" \
+            "--target-list=i386-softmmu,x86_64-softmmu,aarch64-softmmu"
+
       - name: Compile Qemu build
         shell: bash
-        continue-on-error: true
         working-directory: ./build/qemu               
         run: |
           echo "Compiling Build"
           make -j$(sysctl -n hw.ncpu)      
 
       - name: Installing Qemu build
-        continue-on-error: true
         working-directory: ./build/qemu
         shell: bash
         run: |
           echo "Installing build to output"
-          make install || true
+          make install
 
+      # Step 6: Verification and signing
       - name: Verify Qemu build
         shell: bash
         run: |
@@ -670,29 +627,80 @@ jobs:
         shell: bash
         continue-on-error: true
         run: |
-          echo "Signing binaries"
+          echo "Signing binaries with git commit ID"
           cd install_dir
-          for binary in bin/qemu-system-*; do
-            if [[ "$binary" == *"-unsigned" ]]; then
-              ../../source/qemu-${{ env.pkgver }}/scripts/entitlement.sh --install "$binary" "${binary}-unsigned" ../../source/qemu-${{ env.pkgver }}/pc-bios/qemu.rsrc
-            fi
+          
+          # Get git commit ID for signing
+          GIT_COMMIT=$(cd .. && git rev-parse --short HEAD || echo "unknown")
+          IDEN="qemu-3dfx@${GIT_COMMIT}"
+          
+          echo "Using identity: $IDEN"
+          
+          # Check required dependencies
+          CHECK_DEPS="Rez SetFile codesign xattr"
+          for i in $CHECK_DEPS; do
+              echo -n "checking for $i... "
+              if [ -z $(which $i 2>/dev/null) ]; then
+                  echo "not found"
+                  echo "Warning: $i not found, signing may be incomplete"
+                  continue
+              fi
+              echo $(which $i)
           done
-          cd ..
+          
+          # Files to sign
+          SIGN_EXE="bin/qemu-img bin/qemu-system-i386 bin/qemu-system-x86_64 bin/qemu-system-aarch64"
+          
+          # Add libraries if they exist
+          for lib in lib/libglide2x.0.dylib lib/libglide3x.0.dylib lib/libspice-server.1.dylib lib/libvirglrenderer.1.dylib; do
+              if [ -f "$lib" ]; then
+                  SIGN_EXE="$SIGN_EXE $lib"
+              fi
+          done
+          
+          # Get resource file for Rez
+          QEMU_ICO="../source/qemu-${{ env.pkgver }}/pc-bios/qemu.rsrc"
+          
+          # Sign each binary including ANGLE libraries
+          for i in $SIGN_EXE; do
+              if [ ! -f "$i" ]; then
+                  echo "$i not found, skipping"
+                  continue
+              fi
+              echo "Signing $i"
+              xattr -c "$i"
+              codesign -s - -i "$IDEN" -f "$i"
+              
+              # Apply resource fork to qemu-system binaries
+              if [[ "$i" == bin/qemu-system-* ]]; then
+                  echo "Adding resource fork to $i"
+                  Rez -append "$QEMU_ICO" -o "$i" || echo "Failed to add resource fork to $i"
+                  SetFile -a C "$i" || echo "Failed to set custom icon bit on $i"
+              fi
+          done
 
-      - name: Finalize build
-        continue-on-error: true
-        run: |
-          cd install_dir
-          bash ../scripts/sign_binary          
+          # Also sign ANGLE libraries
+          echo "Signing ANGLE libraries"
+          ANGLE_LIBS=$(find ../build/angle -name "*.dylib" -type f)
+          for lib in $ANGLE_LIBS; do
+              echo "Signing $lib"
+              xattr -c "$lib"
+              codesign -s - -i "$IDEN" -f "$lib"
+          done
+          
+          bash ../scripts/sign_binary
+          
           cat <<EOF > version.txt
           QEMU-3dfx-arch (macOS Build)
           =================================================
           Github Actions Artifact Build
           Version ${{ env.pkgver }}
           Built using macOS
+          Built on $(date)
           EOF
           echo "Finished build at $(date)"
 
+      # Step 7: Upload artifacts
       - name: Upload QEMU binary as artifact
         uses: actions/upload-artifact@v4
         with:
@@ -711,9 +719,9 @@ jobs:
         uses: actions/upload-artifact@v4
         continue-on-error: true
         with:
-          name: macos-compressed-binaries
-          path: Binaries      
- 
+          name: Qemu_macOS-3dfx-virgl_compressed
+          path: Binaries
+
   # Create_Release Job  
   Create_Release:
     needs:
@@ -746,7 +754,7 @@ jobs:
       - name: Download macOS Compressed Binaries
         uses: actions/download-artifact@v4
         with:
-          name: macos-compressed-binaries
+          name: Qemu_macOS-3dfx-virgl_compressed
           path: ./macos_compressed      
 
       - name: Compose Release Assets
@@ -758,8 +766,8 @@ jobs:
 
       - name: Compress Release Assets
         run: |
-          mkdir -p ReleaseCompress
-          tar -cJf ReleaseCompress/qemu-and-wrappers-${{ env.pkgver }}-Windows.tar.xz -C ReleaseAssets .
+          mkdir -p Qemu_Windows_compressed
+          tar -cJf Qemu_Windows_compressed/qemu-and-wrappers-${{ env.pkgver }}-Windows.tar.xz -C ReleaseAssets .
 
       - name: Set Release Tag
         id: set_release_tag
@@ -796,7 +804,7 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ env.TAG_NAME }}
-          file: ReleaseCompress/*.tar.xz
+          file: Qemu_Windows_compressed/*.tar.xz
           file_glob: true
 
       - name: Upload macOS Compressed Binaries as Separate Asset
@@ -804,6 +812,6 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ env.TAG_NAME }}
-          file: macos_compressed/**/*.tar.xz
+          file: Qemu_macOS-3dfx-virgl_compressed/**/*.tar.xz
           file_glob: true
-          
+

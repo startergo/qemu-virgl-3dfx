@@ -8,7 +8,7 @@ jobs:
     name: macOS
     runs-on: macos-latest
     env:
-      pkgver: '9.2.2'
+      pkgver: '9.2.1'
       patch: '00-qemu92x-mesa-glide.patch'      
       ACTIONS_STEP_DEBUG: true
       PKG_CONFIG_PATH: "/opt/homebrew/opt/cyrus-sasl/lib/pkgconfig:/opt/homebrew/opt/zlib/lib/pkgconfig:/opt/homebrew/opt/jpeg/lib/pkgconfig:/opt/homebrew/opt/libxml2/lib/pkgconfig:/opt/homebrew/opt/xz/lib/pkgconfig:/opt/homebrew/opt/gnutls/lib/pkgconfig:/Users/runner/work/qemu-3dfx-arch/qemu-3dfx-arch/lib/pkgconfig"

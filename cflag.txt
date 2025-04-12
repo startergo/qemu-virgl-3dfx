@@ -1,0 +1,3 @@
+add this to configure!
+
+--extra-cflags="-march=native -mtune=native -O3 -flto=auto"

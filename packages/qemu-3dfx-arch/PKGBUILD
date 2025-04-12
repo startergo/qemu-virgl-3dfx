@@ -1,0 +1,178 @@
+# Courtesy from kharovtobi <https://github.com/kharovtobi>
+# Most of the repository source code is not my work! it belongs to kjliew at https://github.com/kjliew/qemu-3dfx (pls support him)
+# Do not post this into AUR!
+# The PKGBUILD is dependent on My repository and uses my patch.
+
+_pkgname=qemu-3dfx
+pkgname="$_pkgname"-arch
+qemuver=9.2.1
+pkgver=v9.2.1.r514.d9e5987
+pkgrel=1
+pkgdesc="MESA GL/3Dfx Glide pass-through for QEMU (Forked repository)"
+arch=("x86_64")
+url="https://github.com/kharovtobi/qemu-3dfx-arch"
+license=('GPL-2.0')
+depends=('qemu-base' 'seabios')
+makedepends=(
+    "alsa-lib"
+    "brltty"
+    "bzip2"
+    "cairo"
+    "capstone"
+    "cdrtools"
+    "curl"
+    "dtc"
+    "djgpp-djcrx"
+    "dos2unix"
+    "fuse3"
+    "gcc-libs"
+    "gdk-pixbuf2"
+    "git"
+    "glib2"
+    "glibc"
+    "glib2-devel"
+    "glusterfs"
+    "gnutls"
+    "gtk3"
+    "jack"
+    "keyutils"
+    "libaio"
+    "libbpf"
+    "libcacard"
+    "libcap-ng"
+    "libepoxy"
+    "libiscsi"
+    "libnfs"
+    "libpipewire"
+    "libpng"
+    "libpulse"
+    "libsasl"
+    "libseccomp"
+    "libslirp"
+    "libssh"
+    "liburing"
+    "libusb"
+    "libx11"
+    "libxdp"
+    "libxkbcommon"
+    "libxml2"
+    "lzo"
+    "mesa"
+    "meson"
+    "multipath-tools"
+    "mingw-w64-binutils"
+    "mingw-w64-gcc"
+    "mingw-w64-tools"
+    "ncurses"
+    "ndctl"
+    "ninja"
+    "numactl"
+    "openwatcom-v2"
+    "patch"
+    "pam"
+    "pcre2"
+    "python"
+    "python-setuptools"
+    "python-distlib"
+    "python-pip"
+    "python-sphinx"
+    "python-sphinx_rtd_theme"
+    "pixman"
+    "rsync"
+    "sdl2"
+    "sdl2_image"
+    "snappy"
+    "spice"
+    "spice-protocol"
+    "systemd"
+    "usbredir"
+    "vde2"
+    "virglrenderer"
+    "vte3"
+    "xxd"
+    "zlib"
+    "zstd"
+)
+optdepends=("qemu-docs: for documentation and learning invocation"
+            "openglide-3dfx: host glide wrappers"
+)
+provides=("qemu-3dfx" "qemu-3dfx-arch")
+conflicts=("qemu-3dfx")
+source=(
+    "git+https://github.com/kharovtobi/qemu-3dfx.git"
+    "https://download.qemu.org/qemu-${qemuver}.tar.xz"
+    "${pkgname}.install"
+)
+noextract=("qemu-${qemuver}.tar.xz")
+sha256sums=(
+    'SKIP'
+    'b7b0782ead63a5373fdfe08e084d3949a9395ec196180286b841f78a464d169c'
+    'SKIP'
+)
+
+pkgver() {
+    cd "$srcdir"/"$_pkgname"
+    echo v${qemuver}.r$(git rev-list --count HEAD).$(git rev-parse --short=7 HEAD)
+}
+
+prepare() {
+    # Prepare source
+    tar xf qemu-${qemuver}.tar.xz -C "$_pkgname"
+
+    # Patch source
+    cd "$_pkgname"/qemu-${qemuver}
+    rsync -r ../qemu-0/hw/3dfx ../qemu-1/hw/mesa ./hw/
+    patch -p0 -i  ../00-qemu92x-mesa-glide.patch
+    bash ../scripts/sign_commit
+    rm -rf "$srcdir"/"$_pkgname"/build
+    mkdir -p "$srcdir"/"$_pkgname"/build
+}
+
+build() {
+    # Build QEMU
+    cd "$srcdir"/"$_pkgname"/build
+    ../qemu-${qemuver}/configure --target-list="i386-softmmu x86_64-softmmu" --disable-xen --disable-libnfs --extra-cflags="-march=native -mtune=native -O3 -flto=auto"
+    make clean
+    make -j16 qemu-system-i386 qemu-system-x86_64
+
+    # Build Wrappers
+    source /opt/watcom/owsetenv.sh
+    cd ../wrappers/3dfx
+    rm -rf build && mkdir build && cd build
+    bash ../../../scripts/conf_wrapper
+    sed -i 's/^DXEGEN=dxe3gen$/DXEGEN=i686-pc-msdosdjgpp-dxe3gen/' ../dxe/Makefile
+    make && make clean
+    cd ../../mesa
+    rm -rf build && mkdir build && cd build
+    bash ../../../scripts/conf_wrapper
+
+    # Add extra files
+    sed -i 's/^TOOLS=$/TOOLS=wglinfo.exe/' Makefile
+    make all+ && make clean
+
+    # Package Wrappers
+    cd ../../iso
+    mkdir -p wrapfx wrapgl/icd
+    cp -f ../3dfx/build/*.{vxd,sys,dll,dxe,ovl,exe} ./wrapfx/
+    cp -f ../mesa/build/*.{dll,exe} ./wrapgl/
+    mv wrapgl/qmfxgl32.dll wrapgl/icd/qmfxgl32.dll
+    cp ../texts/icd-enable.reg wrapgl/icd
+    cp ../texts/readme_icd.txt wrapgl/icd/readme.txt
+    cp -r ../texts/readme.txt readme.txt
+    cp -r ../../LICENSE license.txt
+    bash ../../scripts/sign_binary
+    unix2dos commit\ id.txt license.txt readme.txt autorun.inf open.bat wrapgl/icd/readme.txt
+    mkisofs -JR -V "VMWRAPPER-$(git log --format="%h" -n 1)" -o ../wrappers.iso ../iso
+}
+
+package() {
+    cd "$srcdir"/"$_pkgname"
+    install -Dm644 LICENSE "$pkgdir"/usr/share/licenses/"$_pkgname"/LICENSE
+    install -Dm644 wrappers/wrappers.iso "$pkgdir"/usr/share/"$_pkgname"/wrappers.iso
+    install -Dm644 bin/disks/abd/fd.ima "$pkgdir"/usr/share/"$_pkgname"/fd.ima
+    mkdir -p "$pkgdir"/usr/share/man/man1/
+    ln -sf /usr/share/man/man1/qemu.1.gz "$pkgdir"/usr/share/man/man1/qemu-3dfx-system-i386.1.gz
+    ln -sf /usr/share/man/man1/qemu.1.gz "$pkgdir"/usr/share/man/man1/qemu-3dfx-system-x86_64.1.gz
+    install -Dm755 build/qemu-system-i386 "$pkgdir"/usr/bin/qemu-3dfx-system-i386
+    install -Dm755 build/qemu-system-x86_64 "$pkgdir"/usr/bin/qemu-3dfx-system-x86_64
+}

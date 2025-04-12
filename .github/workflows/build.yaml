@@ -1,0 +1,809 @@
+name: Build Stable Qemu-Virgl
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write    
+
+jobs:
+  MINGW64-Windows:
+    runs-on: windows-2019       
+    env:
+      pkgver: '9.2.1'
+      patch: '00-qemu92x-mesa-glide.patch'
+      mspkg: 'mingw-w64-x86_64'
+    steps:  
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            base 
+            base-devel
+            dos2unix
+            gcc
+            git
+            make
+            ninja
+            patch
+            python 
+            rsync
+            wget
+            zstd
+            ${{ env.mspkg }}-python
+            ${{ env.mspkg }}-python-distlib
+            ${{ env.mspkg }}-python-setuptools
+            ${{ env.mspkg }}-python-sphinx
+            ${{ env.mspkg }}-python-sphinx_rtd_theme
+            ${{ env.mspkg }}-angleproject
+            ${{ env.mspkg }}-autotools
+            ${{ env.mspkg }}-binutils
+            ${{ env.mspkg }}-toolchain
+            ${{ env.mspkg }}-tools
+            ${{ env.mspkg }}-7zip
+            ${{ env.mspkg }}-cairo
+            ${{ env.mspkg }}-capstone
+            ${{ env.mspkg }}-curl
+            ${{ env.mspkg }}-cyrus-sasl
+            ${{ env.mspkg }}-dtc
+            ${{ env.mspkg }}-expat
+            ${{ env.mspkg }}-fontconfig
+            ${{ env.mspkg }}-freetype
+            ${{ env.mspkg }}-gcc
+            ${{ env.mspkg }}-gdk-pixbuf2
+            ${{ env.mspkg }}-gettext-runtime
+            ${{ env.mspkg }}-gettext-tools
+            ${{ env.mspkg }}-glib2
+            ${{ env.mspkg }}-gnutls
+            ${{ env.mspkg }}-gst-libav
+            ${{ env.mspkg }}-gst-plugins-ugly
+            ${{ env.mspkg }}-gtk3
+            ${{ env.mspkg }}-gtk-vnc
+            ${{ env.mspkg }}-jack2
+            ${{ env.mspkg }}-libcacard
+            ${{ env.mspkg }}-libgcrypt
+            ${{ env.mspkg }}-libepoxy
+            ${{ env.mspkg }}-libnfs
+            ${{ env.mspkg }}-libpng
+            ${{ env.mspkg }}-libslirp
+            ${{ env.mspkg }}-libssh
+            ${{ env.mspkg }}-libssh2
+            ${{ env.mspkg }}-libtasn1
+            ${{ env.mspkg }}-libusb
+            ${{ env.mspkg }}-libxml2
+            ${{ env.mspkg }}-lz4
+            ${{ env.mspkg }}-lzo2
+            ${{ env.mspkg }}-meson
+            ${{ env.mspkg }}-msitools
+            ${{ env.mspkg }}-ncurses
+            ${{ env.mspkg }}-nettle
+            ${{ env.mspkg }}-ninja
+            ${{ env.mspkg }}-pcre2
+            ${{ env.mspkg }}-pixman
+            ${{ env.mspkg }}-pkgconf
+            ${{ env.mspkg }}-pulseaudio
+            ${{ env.mspkg }}-SDL2
+            ${{ env.mspkg }}-SDL2_image
+            ${{ env.mspkg }}-SDL2_sound
+            ${{ env.mspkg }}-snappy
+            ${{ env.mspkg }}-spice
+            ${{ env.mspkg }}-spice-gtk
+            ${{ env.mspkg }}-spice-protocol
+            ${{ env.mspkg }}-usbredir
+            ${{ env.mspkg }}-virglrenderer
+            ${{ env.mspkg }}-xz
+            ${{ env.mspkg }}-zlib
+            ${{ env.mspkg }}-zstd
+
+      - name: Extracting build
+        continue-on-error: true
+        shell: msys2 {0}
+        run: |
+          echo "Downloading src"
+          wget -q https://download.qemu.org/qemu-${{ env.pkgver }}.tar.xz
+          echo "Extracting src"
+          tar xf qemu-${{ env.pkgver }}.tar.xz 
+          echo "Don't mind the error, It's a windows feature"
+
+      - name: Patching build
+        shell: msys2 {0}
+        run: |
+          echo "Adding files to src"
+          rsync -rv qemu-0/hw/3dfx qemu-1/hw/mesa qemu-${{ env.pkgver }}/hw/
+          cd qemu-${{ env.pkgver }}
+          echo "Patching files to src"
+          patch -p0 -i ../${{ env.patch }}
+          echo "Signing commit id to src"
+          bash ../scripts/sign_commit
+
+      - name: Configure build
+        working-directory: ./build
+        shell: msys2 {0}
+        run: |
+          echo "Configuring build"
+          ../qemu-${{ env.pkgver }}/configure --target-list="x86_64-softmmu,i386-softmmu" --prefix=$(pwd)/../install_dir
+
+      - name: Compile build
+        working-directory: ./build
+        shell: msys2 {0}
+        run: |
+          echo "Compiling Build"
+          make -j$(nproc)
+
+      - name: Compile Host Openglide
+        working-directory: ./build
+        shell: msys2 {0}
+        run: |
+          git submodule update --init --recursive
+          cd ../wrappers/extra/openglide
+          bash ./bootstrap
+          mkdir ../build && cd ../build
+          ../openglide/configure --disable-sdl && make
+          mkdir ../../../install_dir
+          cp -v .libs/libglide2x.dll ../../../install_dir/libglide2x.dll
+          cp -v .libs/libglide3x.dll ../../../install_dir/libglide3x.dll
+          cp -v ../../../MINGW-packages/openglide-3dfx/q3dlog.sh ../../../install_dir/q3dlog.sh
+
+      - name: Installing build
+        working-directory: ./build
+        shell: msys2 {0}
+        run: |
+          echo "Installing build to output"
+          make install
+          cd ../install_dir
+          bash ../scripts/sign_binary
+          cat <<EOF > version.txt
+          QEMU-3dfx-arch (Windows Build)
+          =================================================
+          GitHub Actions Artifact Build
+          Version ${{ env.pkgver }}
+          Built using ${MSYSTEM} 
+          EOF
+          unix2dos version.txt build-timestamp.txt
+          echo "Finished build at $(date)"
+
+      - name: Uploading build artifact (MINGW64)
+        uses: actions/upload-artifact@v4
+        with:
+          name: bin-windows-mingw64-${{ env.pkgver }}-artifact
+          path: ./install_dir
+
+  UCRT64-Windows:
+    runs-on: windows-2019
+    env:
+      pkgver: '9.2.1'
+      patch: '00-qemu92x-mesa-glide.patch'
+      mspkg: 'mingw-w64-ucrt-x86_64'
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            base
+            base-devel
+            dos2unix
+            gcc
+            git
+            make
+            ninja
+            patch
+            python
+            rsync
+            wget
+            zstd
+            ${{ env.mspkg }}-python
+            ${{ env.mspkg }}-python-distlib
+            ${{ env.mspkg }}-python-setuptools
+            ${{ env.mspkg }}-python-sphinx
+            ${{ env.mspkg }}-python-sphinx_rtd_theme
+            ${{ env.mspkg }}-angleproject
+            ${{ env.mspkg }}-autotools
+            ${{ env.mspkg }}-binutils
+            ${{ env.mspkg }}-toolchain
+            ${{ env.mspkg }}-tools
+            ${{ env.mspkg }}-7zip
+            ${{ env.mspkg }}-cairo
+            ${{ env.mspkg }}-capstone
+            ${{ env.mspkg }}-curl
+            ${{ env.mspkg }}-cyrus-sasl
+            ${{ env.mspkg }}-dtc
+            ${{ env.mspkg }}-expat
+            ${{ env.mspkg }}-fontconfig
+            ${{ env.mspkg }}-freetype
+            ${{ env.mspkg }}-gcc
+            ${{ env.mspkg }}-gdk-pixbuf2
+            ${{ env.mspkg }}-gettext-runtime
+            ${{ env.mspkg }}-gettext-tools
+            ${{ env.mspkg }}-glib2
+            ${{ env.mspkg }}-gnutls
+            ${{ env.mspkg }}-gst-libav
+            ${{ env.mspkg }}-gst-plugins-ugly
+            ${{ env.mspkg }}-gtk3
+            ${{ env.mspkg }}-gtk-vnc
+            ${{ env.mspkg }}-jack2
+            ${{ env.mspkg }}-libcacard
+            ${{ env.mspkg }}-libgcrypt
+            ${{ env.mspkg }}-libepoxy
+            ${{ env.mspkg }}-libnfs
+            ${{ env.mspkg }}-libpng
+            ${{ env.mspkg }}-libslirp
+            ${{ env.mspkg }}-libssh
+            ${{ env.mspkg }}-libssh2
+            ${{ env.mspkg }}-libtasn1
+            ${{ env.mspkg }}-libusb
+            ${{ env.mspkg }}-libxml2
+            ${{ env.mspkg }}-lz4
+            ${{ env.mspkg }}-lzo2
+            ${{ env.mspkg }}-meson
+            ${{ env.mspkg }}-msitools
+            ${{ env.mspkg }}-ncurses
+            ${{ env.mspkg }}-nettle
+            ${{ env.mspkg }}-ninja
+            ${{ env.mspkg }}-pcre2
+            ${{ env.mspkg }}-pixman
+            ${{ env.mspkg }}-pkgconf
+            ${{ env.mspkg }}-pulseaudio
+            ${{ env.mspkg }}-SDL2
+            ${{ env.mspkg }}-SDL2_image
+            ${{ env.mspkg }}-SDL2_sound
+            ${{ env.mspkg }}-snappy
+            ${{ env.mspkg }}-spice
+            ${{ env.mspkg }}-spice-gtk
+            ${{ env.mspkg }}-spice-protocol
+            ${{ env.mspkg }}-usbredir
+            ${{ env.mspkg }}-virglrenderer
+            ${{ env.mspkg }}-xz
+            ${{ env.mspkg }}-zlib
+            ${{ env.mspkg }}-zstd
+
+      - name: Extracting build
+        continue-on-error: true
+        shell: msys2 {0}
+        run: |
+          echo "Downloading src"
+          wget -q https://download.qemu.org/qemu-${{ env.pkgver }}.tar.xz
+          echo "Extracting src"
+          tar xf qemu-${{ env.pkgver }}.tar.xz 
+          echo "Don't mind the error, It's a windows feature"
+
+      - name: Patching build
+        shell: msys2 {0}
+        run: |
+          echo "Adding files to src"
+          rsync -rv qemu-0/hw/3dfx qemu-1/hw/mesa qemu-${{ env.pkgver }}/hw/
+          cd qemu-${{ env.pkgver }}
+          echo "Patching files to src"
+          patch -p0 -i ../${{ env.patch }}
+          echo "Signing commit id to src"
+          bash ../scripts/sign_commit
+
+      - name: Configure build
+        working-directory: ./build
+        shell: msys2 {0}
+        run: |
+          echo "Configuring build"
+          ../qemu-${{ env.pkgver }}/configure --target-list="x86_64-softmmu,i386-softmmu" --prefix=$(pwd)/../install_dir
+
+      - name: Compile build
+        working-directory: ./build
+        shell: msys2 {0}
+        run: |
+          echo "Compiling Build"
+          make -j$(nproc)
+
+      - name: Compile Host Openglide
+        working-directory: ./build
+        shell: msys2 {0}
+        run: |
+          git submodule update --init --recursive
+          cd ../wrappers/extra/openglide
+          bash ./bootstrap
+          mkdir ../build && cd ../build
+          ../openglide/configure --disable-sdl && make
+          mkdir ../../../install_dir
+          cp -v .libs/libglide2x.dll ../../../install_dir/libglide2x.dll
+          cp -v .libs/libglide3x.dll ../../../install_dir/libglide3x.dll
+          cp -v ../../../MINGW-packages/openglide-3dfx/q3dlog.sh ../../../install_dir/q3dlog.sh
+
+      - name: Installing build
+        working-directory: ./build
+        shell: msys2 {0}
+        run: |
+          echo "Installing build to output"
+          make install
+          cd ../install_dir
+          bash ../scripts/sign_binary
+          cat <<EOF > version.txt
+          QEMU-3dfx-arch (Windows Build)
+          =================================================
+          GitHub Actions Artifact Build
+          Version ${{ env.pkgver }}
+          Built using ${MSYSTEM} 
+          EOF
+          unix2dos version.txt build-timestamp.txt 
+          echo "Finished build at $(date)"
+
+      - name: Uploading build artifact (UCRT64)
+        uses: actions/upload-artifact@v4
+        with:
+          name: bin-windows-ucrt64-${{ env.pkgver }}-artifact
+          path: ./install_dir
+
+  Wrappers:
+    runs-on: windows-2019       
+    steps:  
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW32
+          update: true
+          install: >-
+            base-devel
+            dos2unix
+            git
+            unzip
+            vim
+            wget
+            xorriso
+            mingw-w64-i686-autotools
+            mingw-w64-i686-binutils
+            mingw-w64-i686-gcc
+            mingw-w64-i686-tools
+
+      - name: Adding optional support
+        shell: msys2 {0}
+        run: |
+          echo "initialize submodules"
+          git submodule update --init --recursive
+          echo "Downloading watcom"
+          wget -q https://github.com/open-watcom/open-watcom-v2/releases/download/2025-01-03-Build/ow-snapshot.tar.xz
+          echo "Downloading djgpp"
+          wget -q https://github.com/andrewwutw/build-djgpp/releases/download/v3.4/djgpp-mingw-gcc1220.zip
+          mkdir watcom
+          echo "Extracting watcom"
+          tar xf ow-snapshot.tar.xz -C watcom
+          echo "Extracting djgpp"
+          unzip djgpp-mingw-gcc1220.zip
+          cp -v djgpp/i586-pc-msdosdjgpp/bin/dxe* djgpp/bin
+
+      - name: Compile wrappers
+        shell: msys2 {0}
+        run: |
+          echo "Adding Environment Variables"
+          export WATCOM=$(pwd)/watcom
+          export PATH=$WATCOM/binnt:$PATH:$WATCOM/binw:$PATH
+          export EDPATH=$WATCOM/eddat
+          export PATH=$(pwd)/djgpp/bin:$PATH
+          echo "Compiling 3dfx wrappers"
+          cd wrappers/3dfx
+          mkdir build && cd build
+          bash ../../../scripts/conf_wrapper
+          make && make clean
+          echo "Compiling Mesa wrappers"
+          cd ../../mesa
+          mkdir build && cd build
+          bash ../../../scripts/conf_wrapper
+          make all+ && make clean
+          echo "Compiling Guest Openglide"
+          cd ../../extra/openglide/
+          bash ./bootstrap
+          mkdir ../build && cd ../build
+          ../openglide/configure --disable-sdl && make 
+          echo "Compilng g2xwrap"
+          cd ../g2xwrap
+          make
+
+      - name: Installing wrappers
+        shell: msys2 {0}
+        working-directory: ./wrappers/iso
+        run: |
+          echo "Making Wrapper Disk"
+          mkdir -p wrapgl/icd wrapfx g2xwrap
+          cp -r ../3dfx/build/* ./wrapfx/
+          rm -rf ./wrapfx/lib* ./wrapfx/*.o ./wrapfx/*.def ./wrapfx/*.c ./wrapfx/Makefile
+          cp -r ../mesa/build/* ./wrapgl/
+          rm -rf ./wrapgl/Makefile
+          cp -rv ../extra/g2xwrap/*.dll g2xwrap/
+          bash ../../scripts/sign_binary
+          cp ../texts/readme.txt readme.txt
+          cp ../../LICENSE license.txt
+          cp ../texts/icd-enable.reg wrapgl/icd/icd-enable.reg
+          cp ../texts/readme_icd.txt wrapgl/icd/readme.txt
+          mv wrapgl/qmfxgl32.dll wrapgl/icd/qmfxgl32.dll
+          unix2dos autorun.inf open.bat readme.txt wrapgl/icd/readme.txt commit\ id.txt license.txt
+          cd ..
+          xorriso -as mkisofs -JR -V "VMWRAPPER-$(git log --format="%h" -n 1)" -o wrappers.iso iso
+          echo "Finished build at $(date)"
+
+      - name: Uploading wrappers artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wrappers-artifact
+          path: ./wrappers
+
+  build-macos:
+    name: Build Stable Qemu-Virgl (macOS)
+    runs-on: macos-latest
+    env:
+      pkgver: '9.2.1'
+      patch: '00-qemu92x-mesa-glide.patch'
+      ACTIONS_STEP_DEBUG: true      
+      PKG_CONFIG_PATH: "/opt/homebrew/opt/cyrus-sasl/lib/pkgconfig:/opt/homebrew/opt/zlib/lib/pkgconfig:/opt/homebrew/opt/jpeg/lib/pkgconfig:/opt/homebrew/opt/libxml2/lib/pkgconfig:/opt/homebrew/opt/xz/lib/pkgconfig:/opt/homebrew/opt/gnutls/lib/pkgconfig:/Users/runner/work/qemu-3dfx-arch/qemu-3dfx-arch/lib/pkgconfig:/opt/local/lib/pkgconfig"
+    steps:
+      - name: Set up environment variables
+        id: vars
+        run: echo "TAG_NAME=9.2.1-${{ github.run_id }}" >> $GITHUB_ENV
+
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Cache dependencies
+        id: cache-deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/Homebrew
+            ~/Library/Logs/Homebrew
+          key: ${{ runner.os }}-brew-${{ hashFiles('**/Brewfile.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-brew-
+      
+      - name: Install dependencies
+        run: |                  
+          brew install $(brew deps --include-build qemu) || true
+          brew install --cask xquartz || true
+          brew install autoconf-archive binutils cyrus-sasl devutils GStreamer gtk+ gtk+3 jack jpeg libgcrypt || true
+          brew install libiscsi libnfs libssh2 libx11 libxkbcommon libxml2 libxxf86vm mesa opus sdl12-compat sdl2 sdl2_image || true
+          brew install sphinx-doc tree usbredir wget zlib || true                  
+
+      - name: Cache build
+        id: cache-build
+        uses: actions/cache@v4
+        with:
+          path: build
+          key: ${{ runner.os }}-build-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-build-
+
+      - name: Cache include and lib directories
+        id: cache-include-lib
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ github.workspace }}/include
+            ${{ github.workspace }}/lib
+          key: ${{ runner.os }}-include-lib-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-include-lib-
+
+      - name: Cache depot_tools and angle directories
+        id: cache-depot-angle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ github.workspace }}/depot_tools
+            ${{ github.workspace }}/source/angle/include
+          key: ${{ runner.os }}-depot-angle-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-depot-angle-
+
+      - name: Clean working directory
+        continue-on-error: true
+        run: git clean -fdx -e depot_tools -e source/angle/include -e build/angle -e build/virglrenderer -e build/libepoxy -e include -e lib      
+
+      - name: Set up environment macOS Virgl
+        run: |
+          if [ ! -d "include" ] || [ ! "$(ls -A include)" ] || [ ! -d "lib" ] || [ ! "$(ls -A lib)" ]; then
+            echo "Cache not found, setting up environment..."
+            set -eux
+            rm -rf include/*
+            find include/.* -maxdepth 1 -mindepth 1 -exec rm -rf {} +
+            rm -rf lib/*
+            find lib/.* -maxdepth 1 -mindepth 1 -exec rm -rf {} +
+            mkdir -p depot_tools build/qemu source/angle source/libepoxy source/virglrenderer source/qemu
+            git -C depot_tools init
+            git -C depot_tools fetch https://chromium.googlesource.com/chromium/tools/depot_tools 22df6f8e622dc3e8df8dc8b5d3e3503b169af78e
+            git -C depot_tools checkout FETCH_HEAD
+            cd source
+            echo "Downloading src"
+            wget -q https://download.qemu.org/qemu-${{ env.pkgver }}.tar.xz
+            echo "Extracting src"
+            tar xf qemu-${{ env.pkgver }}.tar.xz
+            cd ..            
+            export DEPOT_TOOLS_UPDATE=0
+            export PATH="$PWD/depot_tools:$PATH"
+            git -C source/angle init
+            git -C source/angle fetch https://chromium.googlesource.com/angle/angle fffbc739779a2df56a464fd6853bbfb24bebb5f6
+            git -C source/angle checkout FETCH_HEAD
+            git -C source/libepoxy init
+            git -C source/libepoxy fetch https://github.com/akihikodaki/libepoxy.git macos
+            git -C source/libepoxy checkout FETCH_HEAD
+            git -C source/virglrenderer init
+            git -C source/virglrenderer fetch https://github.com/akihikodaki/virglrenderer.git macos
+            git -C source/virglrenderer checkout FETCH_HEAD
+            cd source/angle
+            scripts/bootstrap.py
+            gclient sync -D
+            gn gen --args=is_debug=false ../../build/angle
+            cd ../..
+            ninja -C build/angle
+            echo "Setting up libepoxy build"
+            meson setup "-Dc_args=-I$PWD/source/angle/include" -Degl=yes -Dx11=false "--prefix=$PWD" build/libepoxy source/libepoxy
+            echo "Installing libepoxy"
+            meson install -C build/libepoxy
+            echo "Setting up virglrenderer build"
+            meson setup "-Dc_args=-I$PWD/source/angle/include" "--pkg-config-path=$PWD/lib/pkgconfig" "--prefix=$PWD" build/virglrenderer source/virglrenderer
+            echo "Installing virglrenderer"
+            meson install -C build/virglrenderer
+          else
+            echo "Using cached include and lib directories."
+          fi
+
+      - name: Cache installed include and lib files
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ github.workspace }}/include
+            ${{ github.workspace }}/lib
+          key: ${{ runner.os }}-include-lib-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-include-lib-      
+
+      - name: Upload build-virglrenderer as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-virglrenderer
+          path: build/virglrenderer
+          if-no-files-found: warn
+          compression-level: 6
+          overwrite: false
+          include-hidden-files: true
+
+      - name: Upload build-libepoxy as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-libepoxy
+          path: build/libepoxy
+          if-no-files-found: warn
+          compression-level: 6
+          overwrite: false
+          include-hidden-files: true       
+
+      - name: Fetch and checkout QEMU source
+        continue-on-error: true
+        run: |
+          echo "Downloading src"
+          mkdir -p source
+          cd source
+          if [ ! -d "qemu-${{ env.pkgver }}" ]; then
+            wget -q https://download.qemu.org/qemu-${{ env.pkgver }}.tar.xz
+            echo "Extracting src"
+            tar xf qemu-${{ env.pkgver }}.tar.xz
+          else
+            echo "QEMU source already exists, skipping download."
+          fi
+          cd ..
+
+      - name: Create build/qemu directory        
+        run: |
+          if [ "${{ steps.cache-include-lib.outputs.cache-hit }}" == 'true' ]; then
+            mkdir -p build/qemu
+          fi
+
+      - name: Prepare Angle
+        continue-on-error: true
+        run: |
+          if [ "${{ steps.cache-include-lib.outputs.cache-hit }}" == 'true' ]; then
+            export DEPOT_TOOLS_UPDATE=0
+            export PATH="$PWD/depot_tools:$PATH"          
+          fi     
+
+      - name: Create install_dir
+        run: mkdir -p install_dir
+
+      - name: Patching build
+        shell: bash
+        continue-on-error: true
+        run:  |
+          echo "Adding files to src"
+          rsync -rv qemu-0/hw/3dfx qemu-1/hw/mesa source/qemu-${{ env.pkgver }}/hw/
+          cd source/qemu-${{ env.pkgver }}
+          echo "Patching files to src"
+          patch -p0 -i ../../${{ env.patch }}
+          echo "Signing commit id to src"
+          bash ../../scripts/sign_commit
+
+      - name: Configure Qemu build
+        continue-on-error: true
+        working-directory: ./build/qemu
+        shell: bash
+        run: |
+          echo "Configuring build"                
+          PKG_CONFIG_PATH="$PWD/../../lib/pkgconfig" ../../source/qemu-${{ env.pkgver }}/configure "--extra-cflags=-I$PWD/../../source/angle/include -march=native -mtune=native -flto=auto" "--extra-ldflags=-L$PWD/../../lib" "--prefix=$PWD/../../install_dir"    
+         
+      - name: Compile Qemu build
+        shell: bash
+        continue-on-error: true
+        working-directory: ./build/qemu               
+        run: |
+          echo "Compiling Build"
+          make -j$(sysctl -n hw.ncpu)      
+
+      - name: Installing Qemu build
+        continue-on-error: true
+        working-directory: ./build/qemu
+        shell: bash
+        run: |
+          echo "Installing build to output"
+          make install || true
+
+      - name: Verify Qemu build
+        shell: bash
+        run: |
+          echo "Verifying Qemu build"
+          ls -la ./install_dir/bin    
+
+      - name: Signing Binaries
+        shell: bash
+        continue-on-error: true
+        run: |
+          echo "Signing binaries"
+          cd install_dir
+          for binary in bin/qemu-system-*; do
+            if [[ "$binary" == *"-unsigned" ]]; then
+              ../../source/qemu-${{ env.pkgver }}/scripts/entitlement.sh --install "$binary" "${binary}-unsigned" ../../source/qemu-${{ env.pkgver }}/pc-bios/qemu.rsrc
+            fi
+          done
+          cd ..
+
+      - name: Finalize build
+        continue-on-error: true
+        run: |
+          cd install_dir
+          bash ../scripts/sign_binary          
+          cat <<EOF > version.txt
+          QEMU-3dfx-arch (macOS Build)
+          =================================================
+          Github Actions Artifact Build
+          Version ${{ env.pkgver }}
+          Built using macOS
+          EOF
+          echo "Finished build at $(date)"
+
+      - name: Upload QEMU binary as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: qemu-binary-virgl
+          path: ./install_dir
+          
+      - name: Compress QEMU binaries
+        run: |
+          mkdir -p Binaries
+          tar -cJf Binaries/qemu-${{ env.pkgver }}-macos.tar.xz -C install_dir .
+          tar -cJf Binaries/lib.tar.xz -C lib .
+          tar -cJf Binaries/include.tar.xz -C include .
+          tar -cJf Binaries/angle.tar.xz -C build/angle .
+
+      - name: Upload Compressed macOS Binaries
+        uses: actions/upload-artifact@v4
+        continue-on-error: true
+        with:
+          name: macos-compressed-binaries
+          path: Binaries      
+ 
+  # Create_Release Job  
+  Create_Release:
+    needs:
+      - MINGW64-Windows
+      - UCRT64-Windows
+      - Wrappers
+      - build-macos
+    runs-on: ubuntu-latest
+    env:
+      pkgver: "9.2.1"
+    steps:
+      - name: Download MINGW64 Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: bin-windows-mingw64-${{ env.pkgver }}-artifact
+          path: ./mingw64_artifact
+
+      - name: Download UCRT64 Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: bin-windows-ucrt64-${{ env.pkgver }}-artifact
+          path: ./ucrt64_artifact
+
+      - name: Download Wrappers Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: wrappers-artifact
+          path: ./wrappers_artifact
+
+      - name: Download macOS Compressed Binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-compressed-binaries
+          path: ./macos_compressed      
+
+      - name: Compose Release Assets
+        run: |
+          mkdir -p ReleaseAssets
+          cp -r mingw64_artifact ReleaseAssets/
+          cp -r ucrt64_artifact ReleaseAssets/
+          cp -r wrappers_artifact ReleaseAssets/          
+
+      - name: Compress Release Assets
+        run: |
+          mkdir -p ReleaseCompress
+          tar -cJf ReleaseCompress/qemu-and-wrappers-${{ env.pkgver }}-Windows.tar.xz -C ReleaseAssets .
+
+      - name: Set Release Tag
+        id: set_release_tag
+        shell: bash
+        env:
+          REPO: ${{ github.repository }}
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PKGVER: ${{ env.pkgver }}
+        run: |
+          echo "Fetching existing releases for repo ${REPO}..."
+          releases=$(curl -s -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/${REPO}/releases")
+          base_exists=$(echo "$releases" | jq -r --arg t "$PKGVER" '.[].tag_name' | grep -Fx "$PKGVER" || true)
+          if [ -z "$base_exists" ]; then
+             echo "Base tag ${PKGVER} does not exist. Using it as the release tag."
+             echo "TAG_NAME=${PKGVER}" >> "$GITHUB_ENV"
+          else
+             echo "Base tag ${PKGVER} exists. Computing next incremental tag..."
+             max=0
+             for tag in $(echo "$releases" | jq -r --arg t "$PKGVER" '.[].tag_name' | grep "^${PKGVER}-"); do
+                 num=${tag#${PKGVER}-}
+                 if [[ $num =~ ^[0-9]+$ ]]; then
+                     if [ $num -gt $max ]; then
+                        max=$num
+                     fi
+                 fi
+             done
+             next=$((max + 1))
+             echo "TAG_NAME=${PKGVER}-${next}" >> "$GITHUB_ENV"
+          fi
+          echo "Final release tag set: $(grep TAG_NAME $GITHUB_ENV)"
+
+      - name: Upload Release Assets
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ env.TAG_NAME }}
+          file: ReleaseCompress/*.tar.xz
+          file_glob: true
+
+      - name: Upload macOS Compressed Binaries as Separate Asset
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ env.TAG_NAME }}
+          file: macos_compressed/**/*.tar.xz
+          file_glob: true
+          

@@ -16,6 +16,7 @@ TOOLSTS=wgltest.exe
 TOOLSIN=wglinfo.exe
 TOOLSGL=wglgears.exe
 GENDEF=gendef
+OUTDIR=$(shell basename `pwd`)
 
 C_OBJS:=\
     fxhook.o \
@@ -60,8 +61,7 @@ $(TARGETICD): $(C_OBJS) szdata.o wrapgl32_icd.o icddrv.o stamp.o
 	@$(CC) -shared $(CFLAGS) -o $@ $(@:dll=def) $+ $(LDFLAGS)
 
 $(TOOLSTS):
-	@echo "  LD  $@"
-	@$(CC) $(CFLAGS) -s -o $@ $(SRCDIR)/wgltest.c $(LDFLAGS) -lgdi32 -lopengl32
+	@make -C ../wgltest OUTDIR=$(OUTDIR)
 
 $(TOOLSGL):
 	@echo "  LD  $@"
@@ -99,11 +99,12 @@ fxlib:
 	@$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	@rm -f *.o *.def
+	@rm -f *.o *.def *.res
 	@if [ -f $(TARGET) ]; then \
 	    $(STRIP) --strip-unneeded $(TARGET); \
 	    sh -c 'ls -l $(TARGET)'; \
 	    strings $(TARGET) | grep " build "; fi
 
 distclean: clean
-	@rm -f $(TARGET) $(TARGETICD) $(TOOLSIN) $(TOOLSGL ) $(TOOLSTS)
+	@rm -f $(TARGET) $(TARGETICD) $(TOOLSIN) $(TOOLSGL) $(TOOLSTS)
+	@make -C ../wgltest $@ OUTDIR=$(OUTDIR)

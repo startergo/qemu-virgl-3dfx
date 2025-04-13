@@ -411,7 +411,7 @@ jobs:
         cd ../../extra/openglide/
         bash ./bootstrap
         mkdir ../build && cd ../build
-        ../openglide/configure --disable-sdl && make 
+        ../openglide/configure --disable-sdl && make
         echo "Compilng g2xwrap"
         cd ../g2xwrap
         make

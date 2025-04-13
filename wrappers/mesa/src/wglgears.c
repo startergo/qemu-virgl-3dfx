@@ -268,13 +268,13 @@ draw(void)
 }
 
 
-/* new window size or exposure for gears*/
+/* new window size or exposure */
 static void
 reshape(int width, int height)
 {
-   GLfloat h = (GLfloat) height / (GLfloat) width; /* height / width */
+   GLfloat h = (GLfloat) height / (GLfloat) width;
 
-   glViewport(0, 0, (GLint) width, (GLint) height);  /* width / height */
+   glViewport(0, 0, (GLint) width, (GLint) height);
    glMatrixMode(GL_PROJECTION);
    glLoadIdentity();
    glFrustum(-1.0, 1.0, -h, h, 5.0, 60.0);
@@ -372,11 +372,10 @@ static void make_window(const char *name, int x, int y, int width, int height) {
 		0, 0, 0
 	};
 
-    /* Window size */
 	winrect.left = (long)0;
-	winrect.right = (long)1920;
+	winrect.right = (long)width;
 	winrect.top = (long) 0;
-	winrect.bottom = (long)1200;
+	winrect.bottom = (long)height;
 
 	hInst = GetModuleHandle(NULL);
 	wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;

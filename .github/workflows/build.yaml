@@ -740,22 +740,22 @@ jobs:
               codesign -s - -i "$IDEN" -f "$lib"
           done
 
-      - name: Upload QEMU binary as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Qemu_macOS-3dfx-virgl_compressed
-          path: ./Binaries  # Changed from ./install_dir to ./Binaries
-          if-no-files-found: warn
-          compression-level: 6
-          overwrite: true  
-
       - name: Compress QEMU binaries
         run: |
           mkdir -p Binaries
           tar -cJf Binaries/qemu-macos-3dfx-${{ env.pkgver }}.tar.xz -C install_dir .
           tar -cJf Binaries/lib-${{ env.pkgver }}.tar.xz -C lib .
           tar -cJf Binaries/include-${{ env.pkgver }}.tar.xz -C include .
-          tar -cJf Binaries/build-angle-${{ env.pkgver }}.tar.xz -C build/angle .      
+          tar -cJf Binaries/build-angle-${{ env.pkgver }}.tar.xz -C build/angle .
+
+      - name: Upload QEMU binary as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Qemu_macOS-3dfx-virgl_compressed
+          path: ./Binaries
+          if-no-files-found: warn
+          compression-level: 6
+          overwrite: true  
 
   # Create_Release Job  
   Create_Release:

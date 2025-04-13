@@ -1384,8 +1384,9 @@ diff -Nru ../orig/qemu-9.2.2/system/vl.c ./system/vl.c
 +
 +static void feature(void)
 +{
-+    const char rev_[ALIGNED(1)] = "rev";
-+    printf("  featuring qemu-3dfx-arch@%s " __TIME__ " " __DATE__ " stable build\n", rev_);
++    const char rev_[ALIGNED(1)]
++        ;
++    printf("  featuring qemu-3dfx@%s"__TIME__" "__DATE__" build\n", rev_);
 +}
 +
  static void version(void)

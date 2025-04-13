@@ -642,6 +642,7 @@ jobs:
             rm -rf lib/libvirglrenderer* include/virgl
             # Reinstall
             meson install -C build/virglrenderer
+          fi
 
       - name: Configure QEMU
         working-directory: ./build/qemu

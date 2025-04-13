@@ -6,7 +6,7 @@
 _pkgname=qemu-3dfx
 pkgname="$_pkgname"-arch
 _qemuver=9.2.2
-pkgver=v9.2.1.r514.d9e5987
+pkgver=v9.2.2.r531.b774e64
 pkgrel=1
 pkgdesc="MESA GL/3Dfx Glide pass-through for QEMU (Forked repository)"
 arch=("x86_64")
@@ -125,8 +125,9 @@ prepare() {
     cd "$_pkgname"/qemu-${_qemuver}
     rsync -r ../qemu-0/hw/3dfx ../qemu-1/hw/mesa ./hw/
 
-    # Change patch per major release
-    patch -p0 -i  ../00-qemu92x-mesa-glide.kht.patch
+    # Change patch per major release (uses kjliew)
+    #patch -p0 -i  ../00-qemu92x-mesa-glide.kht.patch
+    patch -p0 -i  ../00-qemu92x-mesa-glide.patch
 
     bash ../scripts/sign_commit
     rm -rf "$srcdir"/"$_pkgname"/build
@@ -136,7 +137,7 @@ prepare() {
 build() {
     # Build QEMU
     cd "$srcdir"/"$_pkgname"/build
-    ../qemu-${_qemuver}/configure --target-list="i386-softmmu x86_64-softmmu" --disable-xen --disable-libnfs --extra-cflags="-march=native -mtune=native -O3 -flto=auto"
+    ../qemu-${_qemuver}/configure --target-list="i386-softmmu x86_64-softmmu" --disable-xen --extra-cflags="-march=native -mtune=native -O3 -flto=auto"
     make clean
     make -j$(nproc) qemu-system-i386 qemu-system-x86_64
 
@@ -158,13 +159,13 @@ build() {
     # Package Wrappers
     cd ../../iso
     mkdir -p wrapfx wrapgl/icd
-    cp -f ../3dfx/build/*.{vxd,sys,dll,dxe,ovl,exe} ./wrapfx/
-    cp -f ../mesa/build/*.{dll,exe} ./wrapgl/
+    cp -rf ../3dfx/build/*.{vxd,sys,dll,dxe,ovl,exe} ./wrapfx/
+    cp -rf ../mesa/build/*.{dll,exe} ./wrapgl/
     mv wrapgl/qmfxgl32.dll wrapgl/icd/qmfxgl32.dll
     cp ../texts/icd-enable.reg wrapgl/icd
     cp ../texts/readme_icd.txt wrapgl/icd/readme.txt
-    cp -r ../texts/readme.txt readme.txt
-    cp -r ../../LICENSE license.txt
+    cp ../texts/readme.txt readme.txt
+    cp ../../LICENSE license.txt
     bash ../../scripts/sign_binary
     unix2dos commit\ id.txt license.txt readme.txt autorun.inf open.bat wrapgl/icd/readme.txt
     mkisofs -JR -V "VMWRAPPER-$(git log --format="%h" -n 1)" -o ../wrappers.iso ../iso

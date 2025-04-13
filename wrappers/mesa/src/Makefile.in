@@ -5,7 +5,7 @@ CC=$(CROSS)gcc
 RC=windres
 DLLTOOL=dlltool
 STRIP=strip
-CFLAGS=-march=x86-64-v2 -mtune=generic -mfpmath=sse -O3
+CFLAGS=-march=x86-64-v2 -mtune=generic -mfpmath=sse -msse2 -O3
 CFLAGS+=-pipe -I$(QEMU_SRC_DIR)/hw/mesa -I$(FXLIB) -Wall -Werror -flto=auto -fomit-frame-pointer
 LDFLAGS=-static-libgcc
 LDFLAGS+=-Wl,--disable-auto-image-base,--no-seh,--dynamicbase,--nxcompat
@@ -61,6 +61,7 @@ $(TARGETICD): $(C_OBJS) szdata.o wrapgl32_icd.o icddrv.o stamp.o
 	@$(CC) -shared $(CFLAGS) -o $@ $(@:dll=def) $+ $(LDFLAGS)
 
 $(TOOLSTS):
+	@rm -f ../wgltest/wgltest.{.exe,.res}
 	@make -C ../wgltest OUTDIR=$(OUTDIR)
 
 $(TOOLSGL):

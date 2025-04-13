@@ -1399,9 +1399,6 @@ diff -Nru ../orig/qemu-9.2.2/system/vl.c ./system/vl.c
                  exit(0);
                  break;
              case QEMU_OPTION_m:
-diff -Nru ../orig/qemu-9.2.2/target/i386/whpx/whpx-all.c ./target/i386/whpx/whpx-all.c
---- ../orig/qemu-9.2.2/target/i386/whpx/whpx-all.c
-+++ ./target/i386/whpx/whpx-all.c
 @@ -10,6 +10,7 @@
  
  #include "qemu/osdep.h"
@@ -1430,7 +1427,7 @@ diff -Nru ../orig/qemu-9.2.2/target/i386/whpx/whpx-all.c ./target/i386/whpx/whpx
      }
  
      delta = qemu_real_host_page_size() - (start_pa & ~qemu_real_host_page_mask());
-@@ -2362,7 +2370,41 @@
+@@ -2362,7 +2370,40 @@
              + section->offset_within_region + delta;
  
      whpx_update_mapping(start_pa, size, (void *)(uintptr_t)host_va, add,
@@ -3322,7 +3319,7 @@ diff -Nru ../orig/qemu-9.2.2/ui/sdl2.c ./ui/sdl2.c
  #include "qemu/cutils.h"
  #include "ui/console.h"
  #include "ui/input.h"
-@@ -92,7 +93,7 @@
+@@ -93,7 +94,7 @@
      if (scon->hidden) {
          flags |= SDL_WINDOW_HIDDEN;
      }
@@ -3331,7 +3328,7 @@ diff -Nru ../orig/qemu-9.2.2/ui/sdl2.c ./ui/sdl2.c
      if (scon->opengl) {
          flags |= SDL_WINDOW_OPENGL;
      }
-@@ -154,7 +155,7 @@
+@@ -155,7 +156,7 @@
  static void sdl2_redraw(struct sdl2_console *scon)
  {
      if (scon->opengl) {
@@ -3340,10 +3337,10 @@ diff -Nru ../orig/qemu-9.2.2/ui/sdl2.c ./ui/sdl2.c
          sdl2_gl_redraw(scon);
  #endif
      } else {
-@@ -568,6 +569,29 @@
+@@ -584,6 +585,29 @@
      qemu_input_event_sync();
  }
- 
+
 +static int fxui_grab_val(const int grab)
 +{
 +    static int fxui_grab;
@@ -3370,7 +3367,7 @@ diff -Nru ../orig/qemu-9.2.2/ui/sdl2.c ./ui/sdl2.c
  static void handle_windowevent(SDL_Event *ev)
  {
      struct sdl2_console *scon = get_scon_from_window(ev->window.windowID);
-@@ -592,6 +616,7 @@
+@@ -608,6 +632,7 @@
          sdl2_redraw(scon);
          break;
      case SDL_WINDOWEVENT_FOCUS_GAINED:
@@ -3388,12 +3385,10 @@ diff -Nru ../orig/qemu-9.2.2/ui/sdl2.c ./ui/sdl2.c
              sdl_grab_end(scon);
          }
          break;
-@@ -772,8 +798,363 @@
-         SDL_FreeCursor(guest_sprite);
-     }
+@@ -774,6 +800,361 @@
      SDL_QuitSubSystem(SDL_INIT_VIDEO);
-+}
-+
+ }
+ 
 +static void sdl_display_valid(const char *feat)
 +{
 +    if (!sdl2_console) {
@@ -3658,8 +3653,8 @@ diff -Nru ../orig/qemu-9.2.2/ui/sdl2.c ./ui/sdl2.c
 +    sdl_renderer_stat(activate, "mesapt");
 +    if (s->glide_on_mesa && !activate)
 +        glide_renderer_stat(1);
- }
- 
++}
++
 +void mesa_prepare_window(int msaa, int alpha, int scale_x, void *cwnd_fn)
 +{
 +    int scr_w, scr_h;
@@ -3752,25 +3747,17 @@ diff -Nru ../orig/qemu-9.2.2/ui/sdl2.c ./ui/sdl2.c
  static const DisplayChangeListenerOps dcl_2d_ops = {
      .dpy_name             = "sdl2-2d",
      .dpy_gfx_update       = sdl2_2d_update,
-@@ -784,7 +1165,7 @@
-     .dpy_cursor_define    = sdl_mouse_define,
- };
- 
--#ifdef CONFIG_OPENGL
-+#if defined(CONFIG_OPENGL) && defined(CONFIG_EGL)
- static const DisplayChangeListenerOps dcl_gl_ops = {
-     .dpy_name                = "sdl2-gl",
-     .dpy_gfx_update          = sdl2_gl_update,
-@@ -818,7 +1199,7 @@
- {
+@@ -834,6 +1215,9 @@
+
      assert(o->type == DISPLAY_TYPE_SDL);
-     if (o->has_gl && o->gl) {
--#ifdef CONFIG_OPENGL
-+#if defined(CONFIG_OPENGL) && defined(CONFIG_EGL)
-         display_opengl = 1;
- #endif
+
++#ifdef __linux__
++    SDL_SetHint(SDL_HINT_VIDEODRIVER, "x11");
++#endif
+     if (SDL_GetHintBoolean("QEMU_ENABLE_SDL_LOGGING", SDL_FALSE)) {
+         SDL_LogSetAllPriority(SDL_LOG_PRIORITY_VERBOSE);
      }
-@@ -926,6 +1307,7 @@
+@@ -926,6 +1310,7 @@
      g_free(dir);
      if (icon) {
          SDL_SetWindowIcon(sdl2_console[0].real_window, icon);
@@ -3778,7 +3765,7 @@ diff -Nru ../orig/qemu-9.2.2/ui/sdl2.c ./ui/sdl2.c
      }
  
      mouse_mode_notifier.notify = sdl_mouse_mode_change;
-@@ -954,6 +1336,6 @@
+@@ -980,6 +1361,6 @@
  
  type_init(register_sdl1);
  

@@ -4,10 +4,21 @@
 name: Build Stable branch
 
 on:
-  - push
-  - pull_request
-  - workflow_dispatch
-  
+  push:
+    branches:
+      - test_changes
+  pull_request:
+    branches:
+      - test_changes
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write    
+
 jobs:
    MINGW64-Windows:
    
@@ -438,8 +449,457 @@ jobs:
        xorriso -as mkisofs -JR -V "VMWRAPPER-$(git log --format="%h" -n 1)" -o wrappers.iso iso
        echo "Finished build at $(date)"
 
-    - name: Uploading wrappers
-      uses: actions/upload-artifact@v4
-      with:
-        name: wrappers-artifact
-        path: ./wrappers
+      - name: Uploading wrappers artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wrappers-artifact
+          path: ./wrappers
+
+  build-macos:
+    name: macOS
+    runs-on: macos-latest
+    env:
+      pkgver: '9.2.2'
+      patch: '00-qemu92x-mesa-glide.patch'      
+      ACTIONS_STEP_DEBUG: true
+      PKG_CONFIG_PATH: "/opt/homebrew/opt/cyrus-sasl/lib/pkgconfig:/opt/homebrew/opt/zlib/lib/pkgconfig:/opt/homebrew/opt/jpeg/lib/pkgconfig:/opt/homebrew/opt/libxml2/lib/pkgconfig:/opt/homebrew/opt/xz/lib/pkgconfig:/opt/homebrew/opt/gnutls/lib/pkgconfig:/Users/runner/work/qemu-virgl-3dfx/qemu-virgl-3dfx/lib/pkgconfig"
+    
+    steps:
+      - name: Set up environment variables
+        id: vars
+        run: |
+          # Get the latest release tag that matches the pattern
+          LATEST_TAG=$(git ls-remote --tags origin | grep -o 'refs/tags/9\.2\.1-[0-9]*$' | sort -V | tail -n1 | grep -o '[0-9]*$' || echo "0")
+          
+          # Increment the counter
+          NEXT_NUMBER=$((LATEST_TAG + 1))
+          
+          # Set the new tag
+          echo "TAG_NAME=9.2.2-${NEXT_NUMBER}" >> $GITHUB_ENV
+          echo "Using tag: 9.2.2-${NEXT_NUMBER}"
+        
+      # Step 1: Basic setup
+      - name: Checkout repo
+        uses: actions/checkout@v4      
+      
+      - name: Install dependencies
+        run: |                  
+          brew install $(brew deps --include-build qemu) || true
+          brew install --cask xquartz || true
+          brew install autoconf-archive binutils cyrus-sasl devutils GStreamer gtk+ gtk+3 jack jpeg libgcrypt || true
+          brew install libiscsi libnfs libssh2 libx11 libxkbcommon libxml2 libxxf86vm mesa opus sdl12-compat sdl2 sdl2_image || true
+          brew install sphinx-doc tree usbredir wget zlib || true                  
+
+      # Step 2: Cache handling
+      - name: Cache depot_tools, angle, virglrenderer, libepoxy, and include
+        id: cache-deps
+        if: always()
+        uses: actions/cache@v4
+        with:
+          path: |
+            depot_tools
+            source/angle/include
+            build/angle
+            build/virglrenderer
+            build/libepoxy
+            include
+            lib
+          key: ${{ runner.os }}-deps-v1-${{ hashFiles('**/depot_tools/**', '**/source/angle/include/**', '**/build/angle/**', '**/build/virglrenderer/**', '**/build/libepoxy/**', '**/include/**') }}
+          restore-keys: |          
+            ${{ runner.os }}-deps-v1-
+
+      - name: Clean working directory if cache miss
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: git clean -fdx -e depot_tools -e source/angle/include -e build/angle -e build/virglrenderer -e build/libepoxy -e include -e lib      
+
+      # Step 3: Source setup - conditioned on cache state
+      - name: Create directories
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p depot_tools build/qemu source/angle source/libepoxy source/virglrenderer install_dir
+
+      - name: Fetch and checkout QEMU source
+        continue-on-error: true
+        run: |
+          echo "Downloading src"
+          mkdir -p source
+          cd source
+          if [ ! -d "qemu-${{ env.pkgver }}" ]; then
+            wget -q https://download.qemu.org/qemu-${{ env.pkgver }}.tar.xz
+            echo "Extracting src"
+            tar xf qemu-${{ env.pkgver }}.tar.xz
+          else
+            echo "QEMU source already exists, skipping download."
+          fi
+          cd ..
+
+      - name: Create build/qemu directory        
+        if: steps.cache-deps.outputs.cache-hit == 'true'
+        run: |
+          mkdir -p build/qemu
+
+      - name: Patching build
+        shell: bash
+        run: |
+          echo "Adding files to src"
+          # First verify the source directories exist
+          if [ ! -d "${{ github.workspace }}/qemu-0/hw/3dfx" ]; then
+            echo "Error: 3dfx directory not found at ${{ github.workspace }}/qemu-0/hw/3dfx"
+            exit 1
+          fi
+          if [ ! -d "${{ github.workspace }}/qemu-1/hw/mesa" ]; then
+            echo "Error: mesa directory not found at ${{ github.workspace }}/qemu-1/hw/mesa"
+            exit 1
+          fi
+          
+          # Verify destination directory exists
+          mkdir -p source/qemu-${{ env.pkgver }}/hw/
+          
+          # Copy files using absolute paths
+          rsync -rv ${{ github.workspace }}/qemu-0/hw/3dfx ${{ github.workspace }}/qemu-1/hw/mesa source/qemu-${{ env.pkgver }}/hw/
+          
+          # Verify patch file exists
+          if [ ! -f "${{ env.patch }}" ]; then
+            echo "Error: Patch file not found at ${{ env.patch }}"
+            exit 1
+          fi
+          
+          # Apply patch and sign commit
+          cd source/qemu-${{ env.pkgver }}
+          echo "Patching files to src"
+          patch -p0 -i ../../${{ env.patch }}
+          echo "Signing commit id to src"
+          bash ../../scripts/sign_commit
+
+      - name: Debug directory structure
+        run: |
+          pwd
+          ls -la
+          ls -la source/qemu-${{ env.pkgver }}/hw/ || echo "hw/ directory not found"
+
+      # Step 4: Build dependencies if cache miss
+      - name: Build dependencies (cache miss)
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        run: |
+          set -eux
+          # Clone repositories
+          git -C depot_tools init
+          git -C depot_tools fetch https://chromium.googlesource.com/chromium/tools/depot_tools
+          git -C depot_tools checkout FETCH_HEAD
+          
+          git -C source/angle init
+          git -C source/angle fetch https://chromium.googlesource.com/angle/angle
+          git -C source/angle checkout FETCH_HEAD
+          
+          git -C source/libepoxy init
+          git -C source/libepoxy fetch https://github.com/akihikodaki/libepoxy.git macos
+          git -C source/libepoxy checkout FETCH_HEAD
+          
+          git -C source/virglrenderer init
+          git -C source/virglrenderer fetch https://github.com/akihikodaki/virglrenderer.git macos
+          git -C source/virglrenderer checkout FETCH_HEAD
+          
+          # Build ANGLE
+          export DEPOT_TOOLS_UPDATE=0
+          export PATH="$PWD/depot_tools:$PATH"
+          cd source/angle
+          scripts/bootstrap.py
+          gclient sync -D
+          gn gen --args=is_debug=false ../../build/angle
+          cd ../..
+          ninja -C build/angle
+          
+          # Build libepoxy
+          [ -e build/libepoxy/meson-info ] || meson setup "-Dc_args=-I$PWD/source/angle/include" -Degl=yes -Dx11=false "--prefix=$PWD" build/libepoxy source/libepoxy
+          meson install -C build/libepoxy
+          
+          # Build virglrenderer
+          [ -e build/virglrenderer/meson-info ] || meson setup "-Dc_args=-I$PWD/source/angle/include" "--pkg-config-path=$PWD/lib/pkgconfig" "--prefix=$PWD" build/virglrenderer source/virglrenderer
+          meson install -C build/virglrenderer
+
+      # Step 5: Verify cached dependencies if cache hit
+      - name: Verify cached dependencies
+        if: steps.cache-deps.outputs.cache-hit == 'true'
+        run: |
+          # Verify angle build exists and is usable FIRST
+          export DEPOT_TOOLS_UPDATE=0
+          export PATH="$PWD/depot_tools:$PATH"
+          if [ ! -d "build/angle" ] || [ ! -f "build/angle/libEGL.dylib" ]; then
+            echo "Angle build from cache may be incomplete, rebuilding..."
+            mkdir -p build/angle
+            cd source/angle
+            scripts/bootstrap.py
+            gclient sync -D
+            gn gen --args=is_debug=false ../../build/angle
+            cd ../..
+            ninja -C build/angle
+          fi
+          
+          # Verify libepoxy installation
+          if [ ! -f "lib/libepoxy.dylib" ]; then
+            [ -e build/libepoxy/meson-info ] || meson setup "-Dc_args=-I$PWD/source/angle/include" -Degl=yes -Dx11=false "--prefix=$PWD" build/libepoxy source/libepoxy
+            meson install -C build/libepoxy
+          fi
+          
+          # Verify virglrenderer installation
+          if [ ! -f "lib/libvirglrenderer.dylib" ] || [ ! -d "include/virgl" ]; then
+            echo "Reinstalling virglrenderer from cached build..."
+            # Clean existing installation if any
+            rm -rf lib/libvirglrenderer* include/virgl
+            # Reinstall
+            meson install -C build/virglrenderer
+          fi
+
+      # Step 6: Build QEMU
+      - name: Configure QEMU
+        working-directory: ./build/qemu
+        shell: bash
+        run: |
+          echo "Configuring build"                
+          # Add epoxy include path to extra-cflags and limit targets
+          PKG_CONFIG_PATH="$PWD/../../lib/pkgconfig" ../../source/qemu-${{ env.pkgver }}/configure \
+            "--extra-cflags=-I$PWD/../../source/angle/include -march=native -mtune=native -flto=auto" \
+            "--extra-ldflags=-L$PWD/../../lib" \
+            "--prefix=$PWD/../../install_dir" \
+            "--target-list=i386-softmmu,x86_64-softmmu,aarch64-softmmu"
+         
+      - name: Compile QEMU
+        working-directory: ./build/qemu
+        shell: bash
+        run: |
+          echo "Compiling Build"
+          make -j$(sysctl -n hw.ncpu)
+
+      - name: Install QEMU
+        working-directory: ./build/qemu
+        shell: bash
+        run: |
+          echo "Installing build to output"
+          make install || true
+          cat <<EOF > ../../install_dir/version.txt
+          QEMU-3dfx-arch (macOS Build)
+          =================================================
+          Github Actions Artifact Build
+          Version ${{ env.pkgver }}
+          Built using macOS
+          Built on $(date)
+          EOF
+          echo "Finished build at $(date)"
+
+      - name: Signing Binaries
+        shell: bash
+        continue-on-error: true
+        run: |
+          echo "Signing binaries with git commit ID"
+          cd install_dir
+          
+          # Get git commit ID for signing
+          GIT_COMMIT=$(cd .. && git rev-parse --short HEAD || echo "unknown")
+          IDEN="qemu-3dfx@${GIT_COMMIT}"
+          
+          echo "Using identity: $IDEN"
+          
+          # Check required dependencies
+          CHECK_DEPS="Rez SetFile codesign xattr"
+          for i in $CHECK_DEPS; do
+              echo -n "checking for $i... "
+              if [ -z $(which $i 2>/dev/null) ]; then
+                  echo "not found"
+                  echo "Warning: $i not found, signing may be incomplete"
+                  continue
+              fi
+              echo $(which $i)
+          done
+          
+          # Files to sign
+          SIGN_EXE="bin/qemu-img bin/qemu-system-i386 bin/qemu-system-x86_64 bin/qemu-system-aarch64"
+          
+          # Add libraries if they exist
+          for lib in lib/libglide2x.0.dylib lib/libglide3x.0.dylib lib/libspice-server.1.dylib lib/libvirglrenderer.1.dylib; do
+              if [ -f "$lib" ]; then
+                  SIGN_EXE="$SIGN_EXE $lib"
+              fi
+          done
+          
+          # Get resource file for Rez
+          QEMU_ICO="../source/qemu-${{ env.pkgver }}/pc-bios/qemu.rsrc"
+          
+          # Sign each binary including ANGLE libraries
+          for i in $SIGN_EXE; do
+              if [ ! -f "$i" ]; then
+                  echo "$i not found, skipping"
+                  continue
+              fi
+              echo "Signing $i"
+              xattr -c "$i"
+              codesign -s - -i "$IDEN" -f "$i"
+              
+              # Apply resource fork to qemu-system binaries
+              if [[ "$i" == bin/qemu-system-* ]]; then
+                  echo "Adding resource fork to $i"
+                  Rez -append "$QEMU_ICO" -o "$i" || echo "Failed to add resource fork to $i"
+                  SetFile -a C "$i" || echo "Failed to set custom icon bit on $i"
+              fi
+          done
+
+          # Also sign ANGLE libraries
+          echo "Signing ANGLE libraries"
+          ANGLE_LIBS=$(find ../build/angle -name "*.dylib" -type f)
+          for lib in $ANGLE_LIBS; do
+              echo "Signing $lib"
+              xattr -c "$lib"
+              codesign -s - -i "$IDEN" -f "$lib"
+          done
+
+      - name: Compress QEMU binaries
+        run: |
+          mkdir -p Binaries
+          tar -cJf Binaries/qemu-macos-3dfx-${{ env.pkgver }}.tar.xz -C install_dir .
+          tar -cJf Binaries/lib-${{ env.pkgver }}.tar.xz -C lib .
+          tar -cJf Binaries/include-${{ env.pkgver }}.tar.xz -C include .
+          tar -cJf Binaries/build-angle-${{ env.pkgver }}.tar.xz -C build/angle .
+
+      - name: Upload QEMU binary as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Qemu_macOS-3dfx-virgl_compressed
+          path: ./Binaries
+          if-no-files-found: warn
+          compression-level: 6
+          overwrite: true  
+
+  # Create_Release Job  
+  Create_Release:
+    needs:
+      - MINGW64-Windows
+      - UCRT64-Windows
+      - Wrappers
+      - build-macos
+    runs-on: ubuntu-latest
+    env:
+      pkgver: "9.2.2"
+    steps:
+      - name: Download MINGW64 Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: bin-windows-mingw64-${{ env.pkgver }}-artifact
+          path: ./mingw64_artifact
+
+      - name: Download UCRT64 Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: bin-windows-ucrt64-${{ env.pkgver }}-artifact
+          path: ./ucrt64_artifact
+
+      - name: Download Wrappers Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: wrappers-artifact
+          path: ./wrappers_artifact
+
+      - name: Download macOS Compressed Binaries
+        uses: actions/download-artifact@v4
+        with:
+          name: Qemu_macOS-3dfx-virgl_compressed
+          path: ./Qemu_macOS-3dfx-virgl_compressed     
+
+      - name: Compose QEMU Release Assets
+        run: |
+          mkdir -p QemuReleaseAssets
+          cp -r mingw64_artifact QemuReleaseAssets/
+          cp -r ucrt64_artifact QemuReleaseAssets/
+
+      - name: Compress QEMU Release Assets
+        run: |
+          mkdir -p Qemu_Windows_compressed
+          tar -cJf Qemu_Windows_compressed/qemu-${{ env.pkgver }}-Windows.tar.xz -C QemuReleaseAssets .
+
+      - name: Compress Wrappers
+        run: |
+          mkdir -p Wrappers_compressed
+          tar -cJf Wrappers_compressed/qemu-wrappers-${{ env.pkgver }}.tar.xz -C wrappers_artifact .
+
+      - name: Set Release Tags
+        id: set_release_tag
+        shell: bash
+        env:
+          REPO: ${{ github.repository }}
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PKGVER: ${{ env.pkgver }}
+        run: |
+          echo "Fetching existing releases for repo ${REPO}..."
+          releases=$(curl -s -H "Authorization: token ${TOKEN}" "https://api.github.com/repos/${REPO}/releases")
+          
+          # Handle QEMU release tag
+          base_exists=$(echo "$releases" | jq -r --arg t "$PKGVER" '.[].tag_name' | grep -Fx "$PKGVER" || true)
+          if [ -z "$base_exists" ]; then
+             echo "Base tag ${PKGVER} does not exist. Using it as the release tag."
+             echo "QEMU_TAG_NAME=${PKGVER}" >> "$GITHUB_ENV"
+          else
+             echo "Base tag ${PKGVER} exists. Computing next incremental tag..."
+             max=0
+             for tag in $(echo "$releases" | jq -r --arg t "$PKGVER" '.[].tag_name' | grep "^${PKGVER}-" | grep -v "wrappers"); do
+                 num=${tag#${PKGVER}-}
+                 if [[ $num =~ ^[0-9]+$ ]]; then
+                     if [ $num -gt $max]; then
+                        max=$num
+                     fi
+                 fi
+             done
+             next=$((max + 1))
+             echo "QEMU_TAG_NAME=${PKGVER}-${next}" >> "$GITHUB_ENV"
+          fi
+          
+          # Handle wrappers release tag
+          wrapper_tag="wrappers-${PKGVER}"
+          wrapper_exists=$(echo "$releases" | jq -r --arg t "$wrapper_tag" '.[].tag_name' | grep -Fx "$wrapper_tag" || true)
+          if [ -z "$wrapper_exists" ]; then
+             echo "Wrappers tag ${wrapper_tag} does not exist. Using it as the wrappers release tag."
+             echo "WRAPPERS_TAG_NAME=${wrapper_tag}" >> "$GITHUB_ENV"
+          else
+             echo "Wrappers tag ${wrapper_tag} exists. Computing next incremental tag..."
+             max=0
+             for tag in $(echo "$releases" | jq -r '.[].tag_name' | grep "^wrappers-${PKGVER}-"); do
+                 num=${tag#wrappers-${PKGVER}-}
+                 if [[ $num =~ ^[0-9]+$ ]]; then
+                     if [ $num -gt $max]; then
+                        max=$num
+                     fi
+                 fi
+             done
+             next=$((max + 1))
+             echo "WRAPPERS_TAG_NAME=wrappers-${PKGVER}-${next}" >> "$GITHUB_ENV"
+          fi
+          
+          echo "Final QEMU release tag: $(grep QEMU_TAG_NAME $GITHUB_ENV)"
+          echo "Final Wrappers release tag: $(grep WRAPPERS_TAG_NAME $GITHUB_ENV)"
+
+      - name: Upload QEMU Release Assets
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ env.QEMU_TAG_NAME }}
+          release_name: "QEMU-3DFX-VIRGL ${{ env.pkgver }}"
+          file: Qemu_Windows_compressed/*.tar.xz
+          file_glob: true
+          overwrite: true
+
+      - name: Upload macOS Compressed Binaries to QEMU Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ env.QEMU_TAG_NAME }}
+          file: Qemu_macOS-3dfx-virgl_compressed/*.tar.xz
+          file_glob: true
+          overwrite: true
+
+      - name: Upload Wrappers to Separate Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ env.WRAPPERS_TAG_NAME }}
+          release_name: "QEMU 3DFX Wrappers ${{ env.pkgver }}"
+          body: "Windows wrappers (3DFX, Mesa, OpenGlide)"
+          file: Wrappers_compressed/*.tar.xz
+          file_glob: true
+          overwrite: true

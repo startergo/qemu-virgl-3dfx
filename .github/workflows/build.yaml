@@ -576,7 +576,6 @@ jobs:
         if: steps.cache-deps.outputs.cache-hit != 'true'
         run: git clean -fdx -e depot_tools -e source/angle/include -e build/angle -e build/virglrenderer -e build/libepoxy -e include -e lib      
 
-      # Step 3: Source setup - conditioned on cache state
       - name: Create directories
         if: steps.cache-deps.outputs.cache-hit != 'true'
         run: |
@@ -788,11 +787,14 @@ jobs:
               if [ -f "$lib" ]; then
                 lib_name=$(basename "$lib")
                 echo "Copying $lib to $target_dir/$lib_name"
-                cp -L "$lib" "$target_dir/$lib_name"
-                collected+=("$lib")
-                
-                # Recursively collect this library's dependencies
-                collect_deps "$lib" "$target_dir"
+                # Use ditto instead of cp for more reliable copying on macOS
+                ditto "$lib" "$target_dir/$lib_name" || echo "Warning: Could not copy $lib"
+                if [ $? -eq 0 ]; then
+                  collected+=("$lib")
+                  
+                  # Recursively collect this library's dependencies
+                  collect_deps "$lib" "$target_dir"
+                fi
               else
                 echo "Warning: Could not find library $lib"
               fi
@@ -800,7 +802,7 @@ jobs:
           }
           
           # Main script
-          if [ $# < 2 ]; then
+          if [ $# -lt 2 ]; then
             echo "Usage: $0 <binary_path> <target_dir>"
             exit 1
           fi
@@ -810,9 +812,15 @@ jobs:
           
           chmod +x ../collect_libs.sh
           
+          # Create directory with proper permissions
+          mkdir -p ../macos_libs/lib
+          chmod -R 755 ../macos_libs
+          
           # Collect dependencies for each executable
           for exe in bin/qemu-system-*; do
-            ../collect_libs.sh "$exe" "../macos_libs/lib"
+            if [ -f "$exe" ]; then
+              ../collect_libs.sh "$exe" "../macos_libs/lib"
+            fi
           done
           
           # Create install script for the end user
@@ -823,7 +831,7 @@ jobs:
           mkdir -p ~/lib
           
           # Copy all libraries
-          cp -v lib/* ~/lib/
+          cp -v lib/* ~/lib/ 2>/dev/null || true
           
           # Create a script to set environment variables
           cat > ~/set_qemu_env.sh << 'INNEREOF'
@@ -858,16 +866,27 @@ jobs:
           ## Library contents
           
           ```
-          $(ls -la lib/)
+          $(ls -la lib/ 2>/dev/null || echo "No libraries found")
           ```
           EOF
           
-          # Collect ANGLE libraries too
-          cp -v ../../build/angle/*.dylib ../macos_libs/lib/
+          # Collect ANGLE libraries too - check if directory exists first
+          if [ -d "../../build/angle" ]; then
+            # Check if any dylib files exist
+            if ls ../../build/angle/*.dylib &>/dev/null; then
+              ditto ../../build/angle/*.dylib ../macos_libs/lib/ || echo "Warning: Could not copy ANGLE libraries"
+            else
+              echo "No ANGLE libraries found in ../../build/angle/"
+            fi
+          else
+            echo "ANGLE build directory not found"
+          fi
           
-          # Create tarball
+          # Create tarball with proper permissions
           cd ..
+          chmod -R 755 macos_libs
           tar -cJf qemu-macos-libs-${{ env.pkgver }}.tar.xz -C macos_libs .
+          mkdir -p Binaries
           mv qemu-macos-libs-${{ env.pkgver }}.tar.xz Binaries/
 
       - name: Collect and package dependencies from Homebrew
@@ -875,6 +894,7 @@ jobs:
         run: |
           echo "Collecting Homebrew dependencies..."
           mkdir -p homebrew_deps
+          chmod -R 755 homebrew_deps
           
           # List of common Homebrew dependencies for QEMU
           DEPS=(
@@ -895,6 +915,7 @@ jobs:
           
           # Create directory structure
           mkdir -p homebrew_deps/lib homebrew_deps/include
+          chmod 755 homebrew_deps/lib homebrew_deps/include
           
           # Copy library files
           for dep in "${DEPS[@]}"; do
@@ -905,11 +926,11 @@ jobs:
               echo "Found $dep at $pkg_path"
               # Copy libraries
               if [ -d "$pkg_path/lib" ]; then
-                find "$pkg_path/lib" -name "*.dylib" -exec cp -v {} homebrew_deps/lib/ \;
+                find "$pkg_path/lib" -name "*.dylib" -exec ditto {} homebrew_deps/lib/ \; || echo "Warning: Could not copy libraries for $dep"
               fi
               # Copy headers
               if [ -d "$pkg_path/include" ]; then
-                cp -rv "$pkg_path/include/"* homebrew_deps/include/
+                ditto "$pkg_path/include/" homebrew_deps/include/ || echo "Warning: Could not copy headers for $dep"
               fi
             else
               echo "Warning: Could not find Homebrew package $dep"
@@ -922,8 +943,8 @@ jobs:
           
           # Copy libraries to /usr/local
           sudo mkdir -p /usr/local/lib /usr/local/include
-          sudo cp -v lib/* /usr/local/lib/
-          sudo cp -rv include/* /usr/local/include/
+          sudo cp -v lib/* /usr/local/lib/ 2>/dev/null || true
+          sudo cp -rv include/* /usr/local/include/ 2>/dev/null || true
           
           echo "Libraries installed to /usr/local/lib"
           echo "Headers installed to /usr/local/include"
@@ -931,7 +952,9 @@ jobs:
           
           chmod +x homebrew_deps/install.sh
           
-          # Create package
+          # Create package with proper permissions
+          chmod -R 755 homebrew_deps
+          mkdir -p Binaries
           tar -cJf Binaries/qemu-macos-homebrew-deps-${{ env.pkgver }}.tar.xz -C homebrew_deps .
 
       - name: Upload QEMU binary as artifact

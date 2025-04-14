@@ -821,6 +821,184 @@ jobs:
           tar -cJf Binaries/include-${{ env.pkgver }}.tar.xz -C include .
           tar -cJf Binaries/build-angle-${{ env.pkgver }}.tar.xz -C build/angle .
 
+      - name: Collect macOS Libraries
+        working-directory: ./install_dir
+        shell: bash
+        run: |
+          echo "Collecting required libraries for standalone use..."
+          mkdir -p ../macos_libs/lib
+          
+          # Create a script to find and collect all dependencies
+          cat > ../collect_libs.sh << 'EOF'
+          #!/bin/bash
+          
+          # Function to recursively collect dependencies
+          collect_deps() {
+            local binary="$1"
+            local target_dir="$2"
+            local collected=()
+            
+            echo "Analyzing dependencies for: $binary"
+            
+            # Get library dependencies
+            local deps=$(otool -L "$binary" | grep -v "$(basename $binary)" | grep -v "@executable_path" | grep -v "@rpath" | 
+                        grep -v "/System/Library" | grep -v "/usr/lib" | awk '{print $1}')
+            
+            for lib in $deps; do
+              # Skip if already collected or system library
+              if [[ " ${collected[*]} " =~ " ${lib} " ]]; then
+                continue
+              fi
+              
+              if [ -f "$lib" ]; then
+                lib_name=$(basename "$lib")
+                echo "Copying $lib to $target_dir/$lib_name"
+                cp -L "$lib" "$target_dir/$lib_name"
+                collected+=("$lib")
+                
+                # Recursively collect this library's dependencies
+                collect_deps "$lib" "$target_dir"
+              else
+                echo "Warning: Could not find library $lib"
+              fi
+            done
+          }
+          
+          # Main script
+          if [ $# < 2 ]; then
+            echo "Usage: $0 <binary_path> <target_dir>"
+            exit 1
+          fi
+          
+          collect_deps "$1" "$2"
+          EOF
+          
+          chmod +x ../collect_libs.sh
+          
+          # Collect dependencies for each executable
+          for exe in bin/qemu-system-*; do
+            ../collect_libs.sh "$exe" "../macos_libs/lib"
+          done
+          
+          # Create install script for the end user
+          cat > ../macos_libs/install_libs.sh << 'EOF'
+          #!/bin/bash
+          
+          # Create libs directory if it doesn't exist
+          mkdir -p ~/lib
+          
+          # Copy all libraries
+          cp -v lib/* ~/lib/
+          
+          # Create a script to set environment variables
+          cat > ~/set_qemu_env.sh << 'INNEREOF'
+          #!/bin/bash
+          export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:~/lib
+          INNEREOF
+          
+          chmod +x ~/set_qemu_env.sh
+          
+          echo ""
+          echo "Libraries installed to ~/lib"
+          echo ""
+          echo "To use QEMU, first run: source ~/set_qemu_env.sh"
+          echo "Or add this line to your ~/.bash_profile or ~/.zshrc:"
+          echo "export DYLD_LIBRARY_PATH=\$DYLD_LIBRARY_PATH:~/lib"
+          EOF
+          
+          chmod +x ../macos_libs/install_libs.sh
+          
+          # Add readme
+          cat > ../macos_libs/README.md << 'EOF'
+          # QEMU macOS Libraries
+          
+          This package contains the libraries required to run QEMU without Homebrew installed.
+          
+          ## Installation
+          
+          1. Extract this archive
+          2. Run `./install_libs.sh`
+          3. Before running QEMU, execute: `source ~/set_qemu_env.sh`
+          
+          ## Library contents
+          
+          ```
+          $(ls -la lib/)
+          ```
+          EOF
+          
+          # Collect ANGLE libraries too
+          cp -v ../../build/angle/*.dylib ../macos_libs/lib/
+          
+          # Create tarball
+          cd ..
+          tar -cJf qemu-macos-libs-${{ env.pkgver }}.tar.xz -C macos_libs .
+          mv qemu-macos-libs-${{ env.pkgver }}.tar.xz Binaries/
+
+      - name: Collect and package dependencies from Homebrew
+        shell: bash
+        run: |
+          echo "Collecting Homebrew dependencies..."
+          mkdir -p homebrew_deps
+          
+          # List of common Homebrew dependencies for QEMU
+          DEPS=(
+            "glib"
+            "pixman"
+            "libusb"
+            "libpng"
+            "jpeg"
+            "libssh"
+            "snappy"
+            "lzo"
+            "nettle"
+            "gnutls"
+            "libslirp"
+            "libssh2"
+            "sdl2"
+          )
+          
+          # Create directory structure
+          mkdir -p homebrew_deps/lib homebrew_deps/include
+          
+          # Copy library files
+          for dep in "${DEPS[@]}"; do
+            echo "Processing $dep..."
+            # Find where Homebrew installed this package
+            pkg_path=$(brew --prefix $dep 2>/dev/null || echo "")
+            if [ -n "$pkg_path" ] && [ -d "$pkg_path" ]; then
+              echo "Found $dep at $pkg_path"
+              # Copy libraries
+              if [ -d "$pkg_path/lib" ]; then
+                find "$pkg_path/lib" -name "*.dylib" -exec cp -v {} homebrew_deps/lib/ \;
+              fi
+              # Copy headers
+              if [ -d "$pkg_path/include" ]; then
+                cp -rv "$pkg_path/include/"* homebrew_deps/include/
+              fi
+            else
+              echo "Warning: Could not find Homebrew package $dep"
+            fi
+          done
+          
+          # Create installation script
+          cat > homebrew_deps/install.sh << 'EOF'
+          #!/bin/bash
+          
+          # Copy libraries to /usr/local
+          sudo mkdir -p /usr/local/lib /usr/local/include
+          sudo cp -v lib/* /usr/local/lib/
+          sudo cp -rv include/* /usr/local/include/
+          
+          echo "Libraries installed to /usr/local/lib"
+          echo "Headers installed to /usr/local/include"
+          EOF
+          
+          chmod +x homebrew_deps/install.sh
+          
+          # Create package
+          tar -cJf Binaries/qemu-macos-homebrew-deps-${{ env.pkgver }}.tar.xz -C homebrew_deps .
+
       - name: Upload QEMU binary as artifact
         uses: actions/upload-artifact@v4
         with:

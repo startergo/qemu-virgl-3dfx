@@ -802,7 +802,7 @@ jobs:
           }
           
           # Main script
-          if [ $# < 2 ]; then
+          if [ $# -lt 2 ]; then
             echo "Usage: $0 <binary_path> <target_dir>"
             exit 1
           fi
@@ -877,7 +877,7 @@ jobs:
               ditto ../../build/angle/*.dylib ../macos_libs/lib/ || echo "Warning: Could not copy ANGLE libraries"
             else
               echo "No ANGLE libraries found in ../../build/angle/"
-            }
+            fi
           else
             echo "ANGLE build directory not found"
           fi

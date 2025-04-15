@@ -802,7 +802,7 @@ jobs:
           }
           
           # Main script
-          if [ $# -lt 2 ]; then
+          if [ $# < 2 ]; then
             echo "Usage: $0 <binary_path> <target_dir>"
             exit 1
           fi
@@ -877,7 +877,7 @@ jobs:
               ditto ../../build/angle/*.dylib ../macos_libs/lib/ || echo "Warning: Could not copy ANGLE libraries"
             else
               echo "No ANGLE libraries found in ../../build/angle/"
-            fi
+            }
           else
             echo "ANGLE build directory not found"
           fi
@@ -957,11 +957,199 @@ jobs:
           mkdir -p Binaries
           tar -cJf Binaries/qemu-macos-homebrew-deps-${{ env.pkgver }}.tar.xz -C homebrew_deps .
 
+      - name: Create Unified macOS Library Package
+        shell: bash
+        run: |
+          echo "Creating unified macOS library package..."
+          
+          # Create directory structure
+          mkdir -p unified_libs/lib unified_libs/include unified_libs/bin
+          chmod -R 755 unified_libs
+          
+          # Copy QEMU libraries from collected dependencies
+          if [ -d "macos_libs/lib" ]; then
+            cp -v macos_libs/lib/* unified_libs/lib/ 2>/dev/null || true
+          fi
+          
+          # Copy Homebrew libraries
+          if [ -d "homebrew_deps/lib" ]; then
+            cp -v homebrew_deps/lib/* unified_libs/lib/ 2>/dev/null || true
+          fi
+          
+          # Copy Homebrew headers
+          if [ -d "homebrew_deps/include" ]; then
+            cp -rv homebrew_deps/include/* unified_libs/include/ 2>/dev/null || true
+          fi
+          
+          # Copy ANGLE libraries - ensure this directory exists
+          if [ -d "build/angle" ]; then
+            # First check if any dylib files exist
+            if ls build/angle/*.dylib &>/dev/null; then
+              echo "Copying ANGLE libraries from build/angle/"
+              cp -v build/angle/*.dylib unified_libs/lib/ || echo "Warning: Could not copy ANGLE libraries"
+            else
+              echo "No ANGLE libraries found in build/angle/"
+            fi
+          else
+            echo "ANGLE build directory not found"
+          fi
+          
+          # Copy virglrenderer and epoxy libraries from lib directory
+          if [ -d "lib" ]; then
+            cp -v lib/libvirglrenderer*.dylib unified_libs/lib/ 2>/dev/null || true
+            cp -v lib/libepoxy*.dylib unified_libs/lib/ 2>/dev/null || true
+          fi
+          
+          # Create a helper script to fix library paths
+          cat > unified_libs/bin/fix-qemu-paths.sh << 'EOF'
+          #!/bin/bash
+          
+          # Get the directory where this script is located
+          SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+          QEMU_BIN_DIR="$SCRIPT_DIR"
+          LIB_DIR="$SCRIPT_DIR/../lib"
+          
+          # Function to fix paths in a binary
+          fix_binary() {
+            local binary="$1"
+            echo "Fixing paths in $binary..."
+            
+            # Get all hardcoded library paths
+            local hardcoded_paths=$(otool -L "$binary" | grep -v "@executable_path" | grep -v "@rpath" | 
+                                    grep -v "/System/Library" | grep -v "/usr/lib" | awk '{print $1}')
+            
+            for path in $hardcoded_paths; do
+              # Get base name of the library
+              local lib_name=$(basename "$path")
+              
+              # Check if we have this library in our lib directory
+              if [ -f "$LIB_DIR/$lib_name" ]; then
+                echo "  Updating $path -> @executable_path/../lib/$lib_name"
+                install_name_tool -change "$path" "@executable_path/../lib/$lib_name" "$binary"
+              fi
+            done
+          }
+          
+          # Fix paths in all QEMU binaries
+          echo "Scanning for QEMU binaries..."
+          for bin in "$QEMU_BIN_DIR"/qemu-system-*; do
+            if [ -f "$bin" ]; then
+              fix_binary "$bin"
+            fi
+          done
+          
+          # Fix paths in libraries too
+          echo "Fixing paths in libraries..."
+          for lib in "$LIB_DIR"/*.dylib; do
+            fix_binary "$lib"
+          done
+          
+          echo "Library paths fixed. QEMU should now run correctly."
+          EOF
+          
+          chmod +x unified_libs/bin/fix-qemu-paths.sh
+          
+          # Create a script to install the libraries
+          cat > unified_libs/install.sh << 'EOF'
+          #!/bin/bash
+          
+          SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+          
+          # Create user's lib directory
+          mkdir -p ~/lib
+          
+          # Copy libraries 
+          cp -v "$SCRIPT_DIR"/lib/* ~/lib/ 2>/dev/null || true
+          
+          # Create environment setup script
+          cat > ~/set_qemu_env.sh << 'INNEREOF'
+          #!/bin/bash
+          export DYLD_LIBRARY_PATH=$HOME/lib:$DYLD_LIBRARY_PATH
+          INNEREOF
+          
+          chmod +x ~/set_qemu_env.sh
+          
+          # Create a script to run QEMU with HVF acceleration
+          cat > ~/run-qemu.sh << 'INNEREOF'
+          #!/bin/bash
+          
+          # Source environment setup
+          source ~/set_qemu_env.sh
+          
+          # Path to QEMU binary - adjust as needed
+          QEMU_BIN="$1"
+          shift
+          
+          # Run QEMU with HVF acceleration
+          "$QEMU_BIN" \
+            -machine virt,accel=hvf \
+            -cpu cortex-a72 -smp 2 -m 1G \
+            "$@"
+          INNEREOF
+          
+          chmod +x ~/run-qemu.sh
+          
+          echo ""
+          echo "Libraries installed to ~/lib"
+          echo "Environment setup script created at ~/set_qemu_env.sh"
+          echo "QEMU helper script created: ~/run-qemu.sh"
+          echo ""
+          echo "To use QEMU, first run: source ~/set_qemu_env.sh"
+          echo "Or add this line to your ~/.bash_profile or ~/.zshrc:"
+          echo "export DYLD_LIBRARY_PATH=\$HOME/lib:\$DYLD_LIBRARY_PATH"
+          EOF
+          
+          chmod +x unified_libs/install.sh
+          
+          # Add README
+          cat > unified_libs/README.md << 'EOF'
+          # QEMU macOS Libraries
+          
+          This package contains all libraries required to run QEMU on macOS, including ANGLE, 
+          VirGL, and all other dependencies.
+          
+          ## Installation
+          
+          1. Extract this archive
+          2. Run `./install.sh`
+          3. Before running QEMU, execute: `source ~/set_qemu_env.sh`
+          
+          ## Running QEMU
+          
+          After installation, you can use the helper script:
+          
+          ```
+          ~/run-qemu.sh /path/to/qemu-system-aarch64 [other QEMU options]
+          ```
+          
+          ## Troubleshooting
+          
+          If you have issues with library paths, run:
+          
+          ```
+          bin/fix-qemu-paths.sh 
+          ```
+          
+          This will fix the paths in your QEMU binaries to point to the correct libraries.
+          
+          ## Library Contents
+          
+          ```
+          $(find lib -type f -name "*.dylib" | sort)
+          ```
+          EOF
+          
+          # Create tarball
+          tar -cJf Binaries/qemu-macos-all-libs-${{ env.pkgver }}.tar.xz -C unified_libs .
+
       - name: Upload QEMU binary as artifact
         uses: actions/upload-artifact@v4
         with:
           name: Qemu_macOS-3dfx-virgl_compressed
-          path: ./Binaries
+          path: |
+            ./Binaries/qemu-macos-3dfx-${{ env.pkgver }}.tar.xz
+            ./Binaries/qemu-macos-all-libs-${{ env.pkgver }}.tar.xz
+            ./Binaries/build-angle-${{ env.pkgver }}.tar.xz
           if-no-files-found: warn
           compression-level: 6
           overwrite: true  

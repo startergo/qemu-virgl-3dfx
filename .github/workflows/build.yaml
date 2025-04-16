@@ -802,7 +802,7 @@ jobs:
           }
           
           # Main script
-          if [ $# -lt 2 ]; then
+          if [ $# < 2 ]; then
             echo "Usage: $0 <binary_path> <target_dir>"
             exit 1
           fi
@@ -1226,7 +1226,7 @@ jobs:
              for tag in $(echo "$releases" | jq -r --arg t "$PKGVER" '.[].tag_name' | grep "^${PKGVER}-" | grep -v "wrappers"); do
                  num=${tag#${PKGVER}-}
                  if [[ $num =~ ^[0-9]+$ ]]; then
-                     if [ $num -gt $max]; then
+                     if [ $num -gt $max ]; then
                         max=$num
                      fi
                  fi
@@ -1247,7 +1247,7 @@ jobs:
              for tag in $(echo "$releases" | jq -r '.[].tag_name' | grep "^wrappers-${PKGVER}-"); do
                  num=${tag#wrappers-${PKGVER}-}
                  if [[ $num =~ ^[0-9]+$ ]]; then
-                     if [ $num -gt $max]; then
+                     if [ $num -gt $max ]; then
                         max=$num
                      fi
                  fi
@@ -1256,8 +1256,8 @@ jobs:
              echo "WRAPPERS_TAG_NAME=wrappers-${PKGVER}-${next}" >> "$GITHUB_ENV"
           fi
           
-          echo "Final QEMU release tag: $(grep QEMU_TAG_NAME $GITHUB_ENV)"
-          echo "Final Wrappers release tag: $(grep WRAPPERS_TAG_NAME $GITHUB_ENV)"
+          echo "Final QEMU release tag: $(cat $GITHUB_ENV | grep QEMU_TAG_NAME | cut -d= -f2)"
+          echo "Final Wrappers release tag: $(cat $GITHUB_ENV | grep WRAPPERS_TAG_NAME | cut -d= -f2)"
 
       - name: Upload QEMU Release Assets
         uses: svenstaro/upload-release-action@v2

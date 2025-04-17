@@ -95,6 +95,33 @@ This way adds VirGL patches for the binary (Windows and MacOS)
 - Recommended for 8.2.x or 7.2.x only?
 - If you compile the binary using patched VirGL package without patching it first will have an error. ([reference](https://github.com/msys2/MINGW-packages/issues/10547))
 
+## Troubleshooting Extended Attributes
+
+macOS may apply extended attributes (quarantine flags) to downloaded files that can prevent proper library loading. If you encounter errors about missing libraries, run:
+
+```bash
+~/fix-macos-libs.sh /path/to/qemu/bin
+```
+
+## Running QEMU After Fix
+
+After applying the fix, users should be able to run QEMU using:
+
+```bash
+# First run the fix script
+~/fix-macos-libs.sh ~/Downloads/qemu-macos-3dfx-9.2.2/bin
+
+# Then run QEMU using the fixed run script
+~/run-fixed-qemu.sh ~/Downloads/qemu-macos-3dfx-9.2.2/bin/qemu-system-aarch64 \
+  -machine virt,accel=hvf \
+  -cpu cortex-a72 -smp 2 -m 1G \
+  -device virtio-gpu-gl-pci \
+  -display cocoa,gl=es \
+  -nodefaults \
+  -device VGA,vgamem_mb=64 \
+  -monitor stdio
+```
+
 ## Building Guest Wrappers
 Refer to [Wrapper Readme](wrappers/README.md) for more info.
 

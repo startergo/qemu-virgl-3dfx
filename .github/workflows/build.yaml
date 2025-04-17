@@ -554,6 +554,27 @@ jobs:
           brew install libiscsi libnfs libssh2 libx11 libxkbcommon libxml2 libxxf86vm mesa opus sdl12-compat sdl2 sdl2_image || true
           brew install sphinx-doc tree usbredir wget zlib || true                  
 
+      - name: Install missing secondary dependencies
+        run: |
+          # Install dependencies that may have been missed
+          brew install libjxl libwebp webp-pixbuf-loader sharpyuv vips poppler || true
+          
+          # Create directory for extra libs if needed
+          mkdir -p extra_libs
+
+          # Find and copy the missing libraries
+          for lib in "libjxl_cms.0.11.dylib" "libsharpyuv.0.dylib"; do
+            # Search in Homebrew locations
+            FOUND_LIB=$(find /opt/homebrew -name "$lib" 2>/dev/null | head -n 1)
+            
+            if [ -n "$FOUND_LIB" ]; then
+              echo "Found $lib at $FOUND_LIB"
+              cp -v "$FOUND_LIB" extra_libs/
+            else
+              echo "Warning: Could not find $lib in Homebrew directories"
+            fi
+          done
+
       # Step 2: Cache handling
       - name: Cache depot_tools, angle, virglrenderer, libepoxy, and include
         id: cache-deps
@@ -999,6 +1020,44 @@ jobs:
             cp -v lib/libvirglrenderer*.dylib unified_libs/lib/ 2>/dev/null || true
             cp -v lib/libepoxy*.dylib unified_libs/lib/ 2>/dev/null || true
           fi
+
+          # Add any extra libraries found
+          if [ -d "extra_libs" ] && [ "$(ls -A extra_libs 2>/dev/null)" ]; then
+            echo "Adding missing extra libraries..."
+            cp -v extra_libs/* unified_libs/lib/ 2>/dev/null || true
+          fi
+
+          # Verify all required libraries exist
+          echo "Checking for required libraries..."
+          REQUIRED_LIBS=(
+            "libsharpyuv.0.dylib"
+            "libjxl_cms.0.11.dylib"
+            "libwebp.7.dylib"
+            "libwebpdemux.2.dylib"
+            "libEGL.dylib"
+            "libGLESv2.dylib"
+            "libepoxy.0.dylib"
+            "libvirglrenderer.1.dylib"
+          )
+
+          MISSING=0
+          for lib in "${REQUIRED_LIBS[@]}"; do
+            if [ ! -f "unified_libs/lib/$lib" ]; then
+              echo "Missing library: $lib"
+              MISSING=1
+              
+              # Try to find it in the system and copy
+              FOUND=$(find /opt/homebrew -name "$lib" 2>/dev/null | head -n 1)
+              if [ -n "$FOUND" ]; then
+                echo "Found at $FOUND, copying..."
+                cp -v "$FOUND" unified_libs/lib/ || echo "Failed to copy $lib"
+              fi
+            fi
+          done
+
+          if [ $MISSING -eq 1 ]; then
+            echo "WARNING: Some libraries could not be found. Package may be incomplete."
+          fi
           
           # Create a helper script to fix library paths
           cat > unified_libs/bin/fix-qemu-paths.sh << 'EOF'
@@ -1089,6 +1148,145 @@ jobs:
           
           chmod +x ~/run-qemu.sh
           
+          # Add script to fix missing libraries
+          cat > ~/fix-missing-libs.sh << 'INNEREOF'
+          #!/bin/bash
+
+          # Check for commonly missing libraries
+          MISSING_LIBS=()
+          LIB_DIR=~/lib
+
+          if [ ! -f "$LIB_DIR/libsharpyuv.0.dylib" ]; then
+            MISSING_LIBS+=("libsharpyuv.0.dylib")
+          fi
+          if [ ! -f "$LIB_DIR/libjxl_cms.0.11.dylib" ]; then
+            MISSING_LIBS+=("libjxl_cms.0.11.dylib") 
+          fi
+
+          if [ ${#MISSING_LIBS[@]} -gt 0 ]; then
+            echo "Missing libraries detected: ${MISSING_LIBS[*]}"
+            echo "Installing with Homebrew..."
+            brew install webp libjxl || true
+            
+            # Find and copy the libraries
+            for lib in "${MISSING_LIBS[@]}"; do
+              FOUND=$(find /opt/homebrew -name "$lib" 2>/dev/null | head -n 1)
+              if [ -n "$FOUND" ]; then
+                echo "Found $lib at $FOUND"
+                cp -v "$FOUND" ~/lib/ || echo "Failed to copy $lib"
+              else
+                echo "Could not find $lib"
+              fi
+            done
+          else
+            echo "All libraries appear to be present"
+          fi
+          INNEREOF
+
+          chmod +x ~/fix-missing-libs.sh
+          echo "Created ~/fix-missing-libs.sh to fix missing libraries if needed"
+
+          # Add the new fix-macos-libs.sh script
+          cat > ~/fix-macos-libs.sh << 'INNEREOF'
+          #!/bin/bash
+
+          echo "QEMU macOS Library Fix Script"
+          echo "============================"
+          echo "This script will fix extended attributes and library paths issues."
+
+          # Get the directory containing QEMU binaries (if provided)
+          if [ -n "$1" ]; then
+            QEMU_DIR="$1"
+          else
+            read -p "Enter path to QEMU binaries directory (e.g. ~/Downloads/qemu-macos-3dfx-9.2.2/bin): " QEMU_DIR
+          fi
+
+          # Make sure path exists
+          if [ ! -d "$QEMU_DIR" ]; then
+            echo "Error: Directory $QEMU_DIR does not exist"
+            exit 1
+          fi
+
+          echo "Using QEMU directory: $QEMU_DIR"
+          LIB_DIR=~/lib
+
+          echo "Step 1: Clearing extended attributes from all binaries and libraries..."
+          xattr -c "$QEMU_DIR"/*
+          xattr -c "$LIB_DIR"/*.dylib
+
+          echo "Step 2: Installing missing libraries..."
+          # Check for commonly missing libraries
+          MISSING_LIBS=()
+          if [ ! -f "$LIB_DIR/libsharpyuv.0.dylib" ]; then
+            MISSING_LIBS+=("libsharpyuv.0.dylib")
+          fi
+          if [ ! -f "$LIB_DIR/libjxl_cms.0.11.dylib" ]; then
+            MISSING_LIBS+=("libjxl_cms.0.11.dylib") 
+          fi
+
+          if [ ${#MISSING_LIBS[@]} -gt 0 ]; then
+            echo "Missing libraries detected: ${MISSING_LIBS[*]}"
+            echo "Installing with Homebrew..."
+            brew install webp libjxl || true
+            
+            # Find and copy the libraries
+            for lib in "${MISSING_LIBS[@]}"; do
+              FOUND=$(find /opt/homebrew -name "$lib" 2>/dev/null | head -n 1)
+              if [ -n "$FOUND" ]; then
+                echo "Found $lib at $FOUND"
+                cp -v "$FOUND" "$LIB_DIR/" || echo "Failed to copy $lib"
+                # Clear attributes on the newly copied library
+                xattr -c "$LIB_DIR/$lib"
+              else
+                echo "Could not find $lib"
+              fi
+            done
+          fi
+
+          echo "Step 3: Fixing library paths in QEMU binaries..."
+          for bin in "$QEMU_DIR"/qemu-system-*; do
+            if [ -f "$bin" ]; then
+              echo "Processing $bin..."
+              
+              # Get all hardcoded library paths
+              HARDCODED_PATHS=$(otool -L "$bin" | grep -v "@executable_path" | grep -v "@rpath" | 
+                                grep -v "/System/Library" | grep -v "/usr/lib" | awk '{print $1}')
+              
+              for path in $HARDCODED_PATHS; do
+                # Get base name of the library
+                lib_name=$(basename "$path")
+                
+                # Check if we have this library in our lib directory
+                if [ -f "$LIB_DIR/$lib_name" ]; then
+                  echo "  Updating $path -> @executable_path/../lib/$lib_name"
+                  install_name_tool -change "$path" "$LIB_DIR/$lib_name" "$bin"
+                fi
+              done
+            fi
+          done
+
+          echo "Step 4: Creating a simple run script..."
+          cat > ~/run-fixed-qemu.sh << 'EOF'
+          #!/bin/bash
+
+          # Set the library path
+          export DYLD_LIBRARY_PATH=$HOME/lib:$DYLD_LIBRARY_PATH
+
+          # Path to QEMU binary
+          QEMU_BIN="$1"
+          shift
+
+          # Run QEMU with the provided arguments
+          "$QEMU_BIN" "$@"
+          EOF
+          chmod +x ~/run-fixed-qemu.sh
+
+          echo "Done! Try running QEMU with: ~/run-fixed-qemu.sh /path/to/qemu-binary [arguments]"
+          INNEREOF
+
+          chmod +x ~/fix-macos-libs.sh
+          echo "Created ~/fix-macos-libs.sh to fix library extended attributes and paths"
+
           echo ""
           echo "Libraries installed to ~/lib"
           echo "Environment setup script created at ~/set_qemu_env.sh"
